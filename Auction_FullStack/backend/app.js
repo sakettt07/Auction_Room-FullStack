@@ -5,6 +5,7 @@ import cookie_parser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import { connectDB } from "./database/db.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import userRouter from "./routes/user.routes.js";
 
 const app=express();
 config({
@@ -27,7 +28,8 @@ app.use(fileUpload({
     tempFileDir:"/tmp/",
 }));
 
-
+//defining all the routes
+app.use("/api/v1/user",userRouter);
 
 connectDB();
 app.use(errorMiddleware)
