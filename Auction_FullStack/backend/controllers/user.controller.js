@@ -83,6 +83,46 @@ const registerUser = asyncHandler(async (req, res) => {
     
 })
 const loginUser = asyncHandler(async (req, res) => {
+    const {email,password} = req.body;
+    if(!email ||!password){
+        throw new ApiError("All fields are required.", 400);
+    }
+    const user=await User.findOne({email}).select("+password");
+    if(!user){
+        throw new ApiError("Invalid credentials.", 401);
+    }
+    //user ne jo password enter kara h wo match bhi toh karna h.
+    const isMatch=await user.comparepassword(password);
+    if(!isMatch){
+        throw new ApiError("Invalid credentials.", 401);
+    }
+    //agr match hojaye toh user ko login kardo and new token banado
+    generateToken(user,"User logged in successfully",200,res);
 
 })
-export { registerUser, loginUser }
+const getUser = asyncHandler(async (req, res) => {
+    // now if the user is loggin then its token must be there
+    const user=req.user;
+    if(!user){
+        throw new ApiError("User not found.", 404);
+    }
+    res.status(200).json({
+        success:true,
+        user
+    });
+})
+const logout=asyncHandler(async (req, res) => {
+    //basically hume bas saved cookie ko clear karna h
+    res.status(200).cookie("token","",{
+        expires:new Date(Date.now()),
+        httpOnly:true,
+        secure:true
+    }).json({
+        success:true,
+        message:"User logged out successfully",
+    })
+})
+const fetchLeaderBoard=asyncHandler(async(req,res)=>{
+    
+})
+export { registerUser, loginUser,getUser,logout }
