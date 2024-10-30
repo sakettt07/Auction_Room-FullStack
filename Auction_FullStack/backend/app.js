@@ -6,6 +6,7 @@ import fileUpload from "express-fileupload";
 import { connectDB } from "./database/db.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import userRouter from "./routes/user.routes.js";
+import auctionItemRouter from "./routes/auctionItem.routes.js";
 
 const app=express();
 config({
@@ -30,6 +31,7 @@ app.use(fileUpload({
 
 //defining all the routes
 app.use("/api/v1/user",userRouter);
+app.use("/api/v1/auctionitem",auctionItemRouter);
 
 connectDB();
 app.use(errorMiddleware)

@@ -111,7 +111,7 @@ const getUser = asyncHandler(async (req, res) => {
         user
     });
 })
-const logout=asyncHandler(async (req, res) => {
+const logoutUser=asyncHandler(async (req, res) => {
     //basically hume bas saved cookie ko clear karna h
     res.status(200).cookie("token","",{
         expires:new Date(Date.now()),
@@ -123,6 +123,16 @@ const logout=asyncHandler(async (req, res) => {
     })
 })
 const fetchLeaderBoard=asyncHandler(async(req,res)=>{
+    try {
+        const users=await User.find({moneySpent:{$gt:0}});
+    const leaderBoard=users.sort((a,b)=>b.moneySpent-a.moneySpent).slice(0,10);
+    res.status(200).json({
+        success:true,
+        leaderBoard
+    })
+    } catch (error) {
+        console.error(error);
+    }
     
 })
-export { registerUser, loginUser,getUser,logout }
+export { registerUser, loginUser,getUser,logoutUser,fetchLeaderBoard }
