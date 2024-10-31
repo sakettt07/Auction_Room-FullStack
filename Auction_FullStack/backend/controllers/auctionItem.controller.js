@@ -29,7 +29,7 @@ const addNewAuctionItem = asyncHandler(async(req,res)=>{
             throw new ApiError("Start Time should not be in the future.", 400);
         }
         // now we will check if a person is already having a running auction
-        const auctionRunning=await Auction.findOne({createdBy:req.user._id, endTime:{$gt:Date.now()}});
+        const auctionRunning=await Auction.findOne({createdBy:req.user.id, endTime:{$gt:Date.now()}});
         if(auctionRunning){
             throw new ApiError("You can't have two running auctions at the same time.", 400);
         }
@@ -62,7 +62,7 @@ const addNewAuctionItem = asyncHandler(async(req,res)=>{
         })
         res.status(201).json({message:`Auction listed successfully and will be visible on the page in ${startTime}`, auctionItem,success:true});
     } catch (error) {
-        console.error(error.message);
+        console.error(error);
     }
 })
 export{addNewAuctionItem};

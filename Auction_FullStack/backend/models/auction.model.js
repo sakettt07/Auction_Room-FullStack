@@ -12,7 +12,7 @@ const auctionSchema = new mongoose.Schema({
     category: { type: String, required: true },
     condition:{
         type:String,
-        enum:['New', 'Refurbished',"Semiused"],
+        enum:['New', 'Refurbished',"Semiused","Used"],
     },
     startingPrice: {
         type: Number,
@@ -28,7 +28,7 @@ const auctionSchema = new mongoose.Schema({
     endTime: {
         type: String
     },
-    itemImge: {
+    itemImage: {
         public_id: { type: String, required: true },
         url: { type: String, required: true }
     },
