@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {v2 as cloudinary} from "cloudinary";
 import { generateToken } from "../utils/jwtToken.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -106,10 +107,7 @@ const getUser = asyncHandler(async (req, res) => {
     if(!user){
         throw new ApiError("User not found.", 404);
     }
-    res.status(200).json({
-        success:true,
-        user
-    });
+    res.status(200).json(new ApiResponse(200,user,"User fetched successfully"));
 })
 const logoutUser=asyncHandler(async (req, res) => {
     //basically hume bas saved cookie ko clear karna h
@@ -117,22 +115,13 @@ const logoutUser=asyncHandler(async (req, res) => {
         expires:new Date(Date.now()),
         httpOnly:true,
         secure:true
-    }).json({
-        success:true,
-        message:"User logged out successfully",
-    })
+    }).json(new ApiResponse(200, {}, "User Logged out Successfully"));
 })
 const fetchLeaderBoard=asyncHandler(async(req,res)=>{
-    try {
         const users=await User.find({moneySpent:{$gt:0}});
     const leaderBoard=users.sort((a,b)=>b.moneySpent-a.moneySpent).slice(0,10);
-    res.status(200).json({
-        success:true,
-        leaderBoard
-    })
-    } catch (error) {
-        console.error(error);
-    }
+    res.status(200).json(new ApiResponse(200, leaderBoard, "Leaderboard fetched"));
+
     
 })
 export { registerUser, loginUser,getUser,logoutUser,fetchLeaderBoard }

@@ -6,7 +6,6 @@ import {v2 as cloudinary} from "cloudinary";
 
 
 const addNewAuctionItem = asyncHandler(async(req,res)=>{
-    try {
         if (!req.files || Object.keys(req.files).length == 0) {
             throw new ApiError("item Image is required.", 400);
         }
@@ -41,10 +40,7 @@ const addNewAuctionItem = asyncHandler(async(req,res)=>{
             }
         )
         if(!cloudinaryResponse || cloudinaryResponse.error){
-            console.error(
-                "cloudinaryError",cloudinaryResponse.error||"Unknown cloudinary error"
-            )
-            throw new ApiError("Failed to upload auctionItem image to cloudinary.", 500);
+            throw new ApiError(`Failed to upload auctionItem image to cloudinary ||${cloudinaryResponse.error}`, 500);
         }
         const auctionItem=await Auction.create({
             title,
@@ -60,9 +56,19 @@ const addNewAuctionItem = asyncHandler(async(req,res)=>{
                 url:cloudinaryResponse.secure_url,
             }
         })
-        res.status(201).json({message:`Auction listed successfully and will be visible on the page in ${startTime}`, auctionItem,success:true});
-    } catch (error) {
-        console.error(error);
-    }
+        return res.status(201).json(new ApiResponse(200,auctionItem,`Auction listed successfully and will be visible on the page in ${startTime}`));
 })
-export{addNewAuctionItem};
+// To get the list of items that the user has posted to the auction.
+const myAuctionItem = asyncHandler(async(req,res) => {
+
+})
+const getAllItems = asyncHandler(async(req,res) =>{
+
+});
+const removeItem=asyncHandler(async(req,res)=>{
+
+})
+const getAuctionDetails=asyncHandler(async(req,res)=>{
+
+})
+export{addNewAuctionItem,getAllItems,getAuctionDetails,removeItem,myAuctionItem};
