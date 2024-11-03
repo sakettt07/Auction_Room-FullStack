@@ -60,10 +60,11 @@ const addNewAuctionItem = asyncHandler(async(req,res)=>{
 })
 // To get the list of items that the user has posted to the auction.
 const myAuctionItem = asyncHandler(async(req,res) => {
-
+    
 })
 const getAllItems = asyncHandler(async(req,res) =>{
-
+    // fetch all the items from the database
+    const items=await Auction.find
 });
 const removeItem=asyncHandler(async(req,res)=>{
 
@@ -71,4 +72,5 @@ const removeItem=asyncHandler(async(req,res)=>{
 const getAuctionDetails=asyncHandler(async(req,res)=>{
 
 })
-export{addNewAuctionItem,getAllItems,getAuctionDetails,removeItem,myAuctionItem};
+const republishItem=asyncHandler(async(req,res)=>{})
+export{addNewAuctionItem,getAllItems,getAuctionDetails,removeItem,myAuctionItem,republishItem};
