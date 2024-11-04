@@ -4,7 +4,7 @@ import { checkRole, isAuthenticated } from '../middlewares/auth.middleware.js';
 const router=express.Router();
 
 // we will be using a middleware for the authentication that only a auctioner can post the item in the auction.
-router.route('/createAuction').post(isAuthenticated, checkRole("Auctioneer"), addNewAuctionItem);
+router.route('/createauction').post(isAuthenticated, checkRole("Auctioneer"), addNewAuctionItem);
 router.route('/auctionitems').get(isAuthenticated,getAllItems);
 router.route('/removeItem/:id').delete(isAuthenticated,checkRole("Auctioneer"),removeItem);
 router.route('/auction/:id').get(isAuthenticated,getAuctionDetails);

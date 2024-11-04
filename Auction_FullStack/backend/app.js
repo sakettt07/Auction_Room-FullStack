@@ -31,7 +31,7 @@ app.use(fileUpload({
 
 //defining all the routes
 app.use("/api/v1/user",userRouter);
-app.use("/api/v1/auctionitem",auctionItemRouter);
+app.use("/api/v1/auctionItem",auctionItemRouter);
 
 connectDB();
 app.use(errorMiddleware)

@@ -37,7 +37,7 @@ const auctionSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    bid: [
+    bids: [
         {
             bidder: { type: mongoose.Schema.Types.ObjectId, ref: "Bid" },
             bidAmount: { type: Number, required: true },
