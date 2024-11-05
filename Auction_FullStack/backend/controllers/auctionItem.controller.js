@@ -4,6 +4,7 @@ import ApiError from "../middlewares/error.middleware.js";
 import { v2 as cloudinary } from "cloudinary";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose";
+import { User } from "../models/user.model.js";
 
 
 
@@ -121,40 +122,70 @@ const getAuctionDetails = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { auctionItem, bidders }, "Auction details fetched successfully"));
 })
 const republishItem = asyncHandler(async (req, res) => {
-    // to republish the auction details of any particular auction.
     const { id } = req.params;
-    //checking the format of the id in the database
+
+    // Validate auction ID format
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError("Invalid auction id.", 400);
     }
-    // now fetching the auction details from the database using the id.
-    const auctionItem = await Auction.findById(id);
+
+    // Fetch auction details
+    let auctionItem = await Auction.findById(id);
     if (!auctionItem) {
         throw new ApiError("Auction not found.", 404);
     }
-    // now we will be checking if the auction belongs to the user who is logged in.
-    if (auctionItem.createdBy.toString()!== req.user._id.toString()) {
+
+    // Verify ownership of auction
+    if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
         throw new ApiError("You are not authorized to republish this auction.", 403);
     }
-    // check if the auction is running or not
-    if(auctionItem.endTime>Date.now()){
+        // Ensure new start and end times are provided
+        const { startTime, endTime } = req.body;
+        if (!startTime || !endTime) {
+            throw new ApiError("Please enter both start and end time.", 400);
+        }
+    // Check if the auction is running by comparing `endTime` with current time
+    const existingEndTime = new Date(auctionItem.endTime);
+    if (existingEndTime > Date.now()) {
         throw new ApiError("Auction is already running.", 400);
     }
-    // now we will be republishing the auction by setting the new start and the end time.
-    let data={
-        startTime:new Date(req.body.startTime),
-        endTime:new Date(req.body.endTime),
+
+
+
+    // Parse and validate start and end times
+    const newStartTime = new Date(startTime);
+    const newEndTime = new Date(endTime);
+    if (newStartTime < Date.now()) {
+        throw new ApiError("Start Time should be in the future.", 400);
+    }
+    if (newStartTime >= newEndTime) {
+        throw new ApiError("End Time should be after the Start Time.", 400);
+    }
+
+    // Update auction data
+    const updateData = {
+        startTime: newStartTime.toISOString(),
+        endTime: newEndTime.toISOString(),
+        bid: [], // Reset bids
+        commissionCalulated: false // Reset commission calculation
     };
-    if(data.startTime<Date.now()){
-        throw new ApiError("Start Time should be in the future.", 400)
-    }
-    if(data.startTime>=data.endTime){
-        throw new ApiError("Start Time should not be in the future.", 400);
-    }
 
-    
+    // Update auction item with new data
+    auctionItem = await Auction.findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+        useFindAndModify: false,
+    });
+
+    // Update user's unpaid commission (reset to zero)
+    await User.findByIdAndUpdate(req.user._id, { unpaidCommission: 0 }, {
+        new: true,
+        useFindAndModify: false,
+        runValidators: true,
+    });
+
+    res.status(200).json(new ApiResponse(200, auctionItem, `Auction republished and will start on ${updateData.startTime}`));
+});
 
 
-
-})
 export { addNewAuctionItem, getAllItems, getAuctionDetails, removeItem, myAuctionItem, republishItem };

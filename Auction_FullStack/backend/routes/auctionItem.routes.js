@@ -9,6 +9,6 @@ router.route('/auctionitems').get(isAuthenticated,getAllItems);
 router.route('/removeItem/:id').delete(isAuthenticated,checkRole("Auctioneer"),removeItem);
 router.route('/auction/:id').get(isAuthenticated,getAuctionDetails);
 router.route('/myauction').get(isAuthenticated,checkRole("Auctioneer"),myAuctionItem);
-router.route('/auctionitem/republish/:id').put(isAuthenticated,checkRole("Auctioneer"),republishItem);
+router.route('/republishauction/:id').put(isAuthenticated,checkRole("Auctioneer"),republishItem);
 
 export default router;
