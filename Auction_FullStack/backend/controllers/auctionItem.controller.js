@@ -139,18 +139,18 @@ const republishItem = asyncHandler(async (req, res) => {
     if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
         throw new ApiError("You are not authorized to republish this auction.", 403);
     }
-        // Ensure new start and end times are provided
-        const { startTime, endTime } = req.body;
-        if (!startTime || !endTime) {
-            throw new ApiError("Please enter both start and end time.", 400);
-        }
+
+    // Ensure new start and end times are provided
+    const { startTime, endTime } = req.body;
+    if (!startTime || !endTime) {
+        throw new ApiError("Please enter both start and end time.", 400);
+    }
+
     // Check if the auction is running by comparing `endTime` with current time
     const existingEndTime = new Date(auctionItem.endTime);
     if (existingEndTime > Date.now()) {
         throw new ApiError("Auction is already running.", 400);
     }
-
-
 
     // Parse and validate start and end times
     const newStartTime = new Date(startTime);
@@ -184,8 +184,17 @@ const republishItem = asyncHandler(async (req, res) => {
         runValidators: true,
     });
 
-    res.status(200).json(new ApiResponse(200, auctionItem, `Auction republished and will start on ${updateData.startTime}`));
+    // Convert times to IST for response
+    const formattedStartTime = new Date(auctionItem.startTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const formattedEndTime = new Date(auctionItem.endTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+
+    res.status(200).json(new ApiResponse(200, {
+        ...auctionItem.toObject(),
+        startTime: formattedStartTime,
+        endTime: formattedEndTime
+    }, `Auction republished and will start on ${formattedStartTime}`));
 });
+
 
 
 export { addNewAuctionItem, getAllItems, getAuctionDetails, removeItem, myAuctionItem, republishItem };
