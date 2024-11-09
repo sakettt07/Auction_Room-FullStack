@@ -19,9 +19,10 @@ const placebid = asyncHandler(async (req, res) => {
     if (amount <= auctionitem.currentPrice) {
         throw new ApiError("Amount should be more than current price", 400);
     }
-    if (amount < auctionitem.startPrice) {
-        throw new ApiError("Amount should be more than start price", 400);
+    if (amount < auctionitem.startingPrice) {
+        throw new ApiError("Amount should be more than starting price", 400);
     }
+    let newBid;
     // check if user has already bid on this item
     try {
         const existingBid = await Bid.findOne({
@@ -32,14 +33,12 @@ const placebid = asyncHandler(async (req, res) => {
         if (existingBidInAuction && existingBid) {
             existingBidInAuction.bidAmount = amount;
             existingBid.amount = amount;
-            await existingBidInAuction.save();
             await existingBid.save();
-            auctionitem.currentPrice = amount;
         }
         // we have checked if user has already bid now if he has not placed a single bid then create his bid
         else {
             const BidDetails = await User.findById(req.user._id);
-            const newBid = await BidDetails.createdAt({
+            newBid = await Bid.create({
                 bidder: req.user._id,
                 auctionItem: auctionitem._id,
                 amount: amount,
@@ -50,11 +49,12 @@ const placebid = asyncHandler(async (req, res) => {
                 userName: BidDetails.userName,
                 profileImage: BidDetails.profileImage?.url
             });
-            auctionitem.currentPrice = amount;
         }
+        auctionitem.currentPrice = amount;
         await auctionitem.save();
-        res.status(201).json(new ApiResponse(200, {currentPrice: auctionitem.currentPrice}, "bid placed successfully"));
-        console.log(newBid);
+        res.status(201).json(new ApiResponse(200, {currentPrice: auctionitem.currentPrice,
+            bid:newBid || existingBid
+        }, "bid placed successfully"));
     } catch (error) {
         throw new ApiError(error.message || "Failed to place the bid", 500)
     }

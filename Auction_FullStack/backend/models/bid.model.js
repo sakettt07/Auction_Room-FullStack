@@ -9,7 +9,7 @@ const bidSchema=new mongoose.Schema({
         type:Number,
         required:true
     },
-    auction:{
+    auctionItem:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Auction',
         required:true
