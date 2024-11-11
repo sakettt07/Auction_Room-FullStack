@@ -47,10 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
         }
     )
     if(!cloudinaryResponse || cloudinaryResponse.error){
-        console.error(
-            "cloudinaryError",cloudinaryResponse.error||"Unknown cloudinary error"
-        )
-        throw new ApiError("Failed to upload profile image to cloudinary.", 500);
+        throw new ApiError(`Failed to upload profile image to cloudinary. ${cloudinaryResponse.error}`, 500);
     }
     // storing the user data.
     const user=new User({

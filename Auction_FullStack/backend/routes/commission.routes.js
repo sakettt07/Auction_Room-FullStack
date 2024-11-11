@@ -1,5 +1,8 @@
 import express from 'express';
-const router=express.Router();
+import { checkRole, isAuthenticated } from '../middlewares/auth.middleware.js';
+import { commissionProof } from '../controllers/commission.controller.js';
+const router = express.Router();
 
-router.route('/commision',)
+router.route('/commissionproof').post(
+    isAuthenticated, checkRole("Auctioneer"), commissionProof)
 export default router;

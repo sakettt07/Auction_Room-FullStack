@@ -1,3 +1,4 @@
+// only for the approved paymentss
 import mongoose from 'mongoose';
 const commissionSchema= new mongoose.Schema({
     amount:{
@@ -9,6 +10,8 @@ const commissionSchema= new mongoose.Schema({
         ref:'User',
         required:true
     }
+},{
+    timestamps:true
 });
 
 export const Commission=mongoose.model('Commission',commissionSchema);

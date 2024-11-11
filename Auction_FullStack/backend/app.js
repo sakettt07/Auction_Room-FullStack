@@ -8,7 +8,7 @@ import { errorMiddleware } from "./middlewares/error.middleware.js";
 import userRouter from "./routes/user.routes.js";
 import auctionItemRouter from "./routes/auctionItem.routes.js";
 import bidRouter from "./routes/bid.routes.js";
-
+import commissionRouter from "./routes/commission.routes.js";
 const app=express();
 config({
     path:"./config/config.env"
@@ -34,6 +34,7 @@ app.use(fileUpload({
 app.use("/api/v1/user",userRouter);
 app.use("/api/v1/auctionItem",auctionItemRouter);
 app.use("/api/v1/bid",bidRouter);
+app.use("/api/v1/commission",commissionRouter);
 
 connectDB();
 app.use(errorMiddleware)
