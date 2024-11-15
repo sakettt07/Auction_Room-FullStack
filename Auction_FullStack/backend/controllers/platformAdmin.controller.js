@@ -2,7 +2,7 @@
 
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../middlewares/error.middleware.js";
+import  ApiError  from "../middlewares/error.middleware.js";
 import mongoose from "mongoose";
 import { Auction } from "../models/auction.model.js";
 import { Paymentproof } from "../models/commissionProof.model.js";
@@ -77,10 +77,10 @@ const updateProofStatus = asyncHandler(async (req, res) => {
 
 const deletePaymentproof=asyncHandler(async(req,res)=>{
     const {id}=req.params;
-    if(!mongoose.Types.ObjectId(id)){
+    if(!mongoose.Types.ObjectId.isValid(id)){
         throw new ApiError("Invalid payment proof id.", 400);
     }
-    const proof=Paymentproof.findById(id);
+    let proof=Paymentproof.findById(id);
     if(!proof){
         throw new ApiError("Payment proof not found.", 404);
     }
