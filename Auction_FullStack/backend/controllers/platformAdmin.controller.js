@@ -88,6 +88,44 @@ const deletePaymentproof=asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200, null,"Payment proof deleted successfully"));
 })
 
+// it is not fethcing the normal user but we want to fetch the users on hte basis of there roles on the platform.
+const fetchAllUsers = asyncHandler(async(req,res)=>{
+    const users=await User.aggregate([
+        // what we want to group the users
+        {
+            $group:{
+                _id:{
+                    month:{$month:"$createdAt"},
+                    year:{$year:"$createdAt"},
+                    role:"$role",
+                },
+                count:{
+                    $sum:1
+                },
+            },
+        },
+        // what response will be visible at the testing end.
+        {
+            $project:{
+                _id:0,
+                month:"$_id.month",
+                year:"$_id.year",
+                role:"$_id.role",
+                count:"$count",
+                _id:0,
+            },
+        },
+        // sorting the users in the ascending order.
+        {
+            $sort:{
+                year:1,
+                month:1,
+            },
+        }
+    ])
+    
+})
+
 
 
 export { deleteAuctionItem, getPaymentproofs, getpaymentDetails ,updateProofStatus,deletePaymentproof};
