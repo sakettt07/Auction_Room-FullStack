@@ -1,10 +1,11 @@
 // This controller will be performing all the platform admin responsibilities which will operate both on auctioneer and the bidder functions.
-
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import  ApiError  from "../middlewares/error.middleware.js";
 import mongoose from "mongoose";
 import { Auction } from "../models/auction.model.js";
+import {User} from "../models/user.model.js";
+import {Commission} from "../models/commission.model.js";
 import { Paymentproof } from "../models/commissionProof.model.js";
 
 // Platform admin can delete the auction if it finds out to be not that much engaging or of no use as it will help the platform to look clean.
@@ -122,10 +123,59 @@ const fetchAllUsers = asyncHandler(async(req,res)=>{
                 month:1,
             },
         }
-    ])
+    ]);
+
+    const bidders=users.filter((user)=>user.role=="Bidder");
+    const auctioneers=users.filter((user)=>user.role=="Auctioneer");
+
+    const transformDataToMonthCollection =(data,totalMonths=12)=>{
+        const result=Array(totalMonths).fill(0);
+
+        data.forEach((item)=>{
+            const index=item.month-1;
+            result[index]=item.count;
+        })
+        return result;
+    }
+
+    const biddersCount=transformDataToMonthCollection(bidders);
+    const auctioneersCount=transformDataToMonthCollection(auctioneers);
+
+    // the response
+
+    res.status(200).json(new ApiResponse(200,{biddersCount,auctioneersCount},"Successfully fetched the sorted data of the bidders and the auctioneeers count in the whole year"))
     
+})
+const monthlyRevenue =asyncHandler(async(req,res)=>{
+    const payments=await Commission.aggregate([{
+        $group:{
+            _id:{
+                month:{$month:"$createdAt"},
+                year:{$year:"$createdAt"},
+            },
+            totalCommission:{
+                $sum:"$amount"
+            }
+        }
+    },{
+        $sort:{
+            "id_year":1,
+            "id_month":1
+        }
+    }])
+    const transformDataToMonthCollection=(payments,totalMonths=12)=>{
+        const result=Array(totalMonths).fill(0);
+        payments.forEach((payment)=>{
+            const index=payment._id.month-1;
+            result[index]=payment.totalCommission;
+        });
+        return result;
+    }
+    const totalRevenueGen=transformDataToMonthCollection(payments);
+
+    res.status(200).json(new ApiResponse(200,totalRevenueGen,"Successfully fetched the total revenue generated in the whole year"))
 })
 
 
 
-export { deleteAuctionItem, getPaymentproofs, getpaymentDetails ,updateProofStatus,deletePaymentproof};
+export { deleteAuctionItem, getPaymentproofs, getpaymentDetails ,updateProofStatus,deletePaymentproof,fetchAllUsers,monthlyRevenue } ;
