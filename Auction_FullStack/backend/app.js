@@ -10,6 +10,7 @@ import auctionItemRouter from "./routes/auctionItem.routes.js";
 import bidRouter from "./routes/bid.routes.js";
 import commissionRouter from "./routes/commission.routes.js";
 import adminRouter from "./routes/platformAdmin.routes.js";
+import { auctionEnded } from "./auto/auctionEndedCron.js";
 const app=express();
 config({
     path:"./config/config.env"
@@ -38,6 +39,7 @@ app.use("/api/v1/bid",bidRouter);
 app.use("/api/v1/commission",commissionRouter);
 app.use("/api/v1/platformadmin",adminRouter);
 
+auctionEnded();
 connectDB();
 app.use(errorMiddleware)
 
