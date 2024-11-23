@@ -4,6 +4,19 @@ import { User } from "../models/user.model.js";
 import { Paymentproof } from "../models/commissionProof.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {v2 as cloudinary} from "cloudinary";
+import { Auction } from "../models/auction.model.js";
+
+const calculateCommision=async(auctionId)=>{
+
+    const auction=await Auction.findById(auctionId);
+    if(!mongoose.Types.ObjectId.isValid(auctionId)){
+        throw new ApiError("Invalid auction id.",400);
+    }
+    const commissionRate=0.09;
+    const commission=auction.currentPrice*commissionRate;
+
+    return commission;
+}
 
 
 const commissionProof=asyncHandler(async(req,res)=>{
@@ -59,4 +72,4 @@ const commissionProof=asyncHandler(async(req,res)=>{
     res.status(200).json(new ApiResponse(200,commissionProofPayment,"Your commission proof has been submitted successfully"));
 })
 
-export{commissionProof};
+export{commissionProof,calculateCommision};
