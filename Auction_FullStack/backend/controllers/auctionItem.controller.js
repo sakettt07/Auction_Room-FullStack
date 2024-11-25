@@ -5,6 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { ApiResponse } from "../utils/ApiResponse.js"
 import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
+import { Bid } from "../models/bid.model.js";
 
 
 
@@ -162,12 +163,23 @@ const republishItem = asyncHandler(async (req, res) => {
         throw new ApiError("End Time should be after the Start Time.", 400);
     }
 
+    // manlo maine auction jeet liya and top the leader board for the highest bid but refuse to buy the item then
+
+    if(auctionItem.highestBidder){
+        const highestBidder=await User.findById(auctionItem.highestBidder);
+        highestBidder.moneySpent-=auctionItem.currentPrice;
+        highestBidder.auctionsWon-=1;
+        highestBidder.save();
+    }
+
     // Update auction data
     const updateData = {
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
         bid: [], // Reset bids
-        commissionCalulated: false // Reset commission calculation
+        commissionCalulated: false ,
+        currentPrice:0,
+        highestBidder:null,
     };
 
     // Update auction item with new data
@@ -176,6 +188,7 @@ const republishItem = asyncHandler(async (req, res) => {
         runValidators: true,
         useFindAndModify: false,
     });
+    await Bid.deleteMany({auctionItem:auctionItem._id});
 
     // Update user's unpaid commission (reset to zero)
     await User.findByIdAndUpdate(req.user._id, { unpaidCommission: 0 }, {
