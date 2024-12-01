@@ -53,6 +53,6 @@ const auctionEnded = () => {
                 throw new ApiError(error.message|| "Some error in the ended auction cron",400);
             }
         }
-    })
+    });
 }
 export { auctionEnded };
