@@ -29,7 +29,6 @@ const deleteAuctionItem = asyncHandler(async (req, res) => {
     await auctionItem.deleteOne();
     return res.status(200).json(new ApiResponse(200, null, "Auction removed successfully"));
 })
-
 const getPaymentproofs = asyncHandler(async (req, res) => {
     let paymentproofs = await Paymentproof.find();
     if (!paymentproofs) {
@@ -37,7 +36,6 @@ const getPaymentproofs = asyncHandler(async (req, res) => {
     }
     return res.status(200).json(new ApiResponse(200, paymentproofs, "Payment proofs fetched successfully"));
 })
-
 const getpaymentDetails = asyncHandler(async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -75,7 +73,6 @@ const updateProofStatus = asyncHandler(async (req, res) => {
 
         return res.status(200).json(new ApiResponse(200, { status: status},"Payment proof updated successfully"));
 })
-
 const deletePaymentproof=asyncHandler(async(req,res)=>{
     const {id}=req.params;
     if(!mongoose.Types.ObjectId.isValid(id)){
@@ -88,7 +85,6 @@ const deletePaymentproof=asyncHandler(async(req,res)=>{
     await proof.deleteOne();
     return res.status(200).json(new ApiResponse(200, null,"Payment proof deleted successfully"));
 })
-
 // it is not fethcing the normal user but we want to fetch the users on hte basis of there roles on the platform.
 const fetchAllUsers = asyncHandler(async(req,res)=>{
     const users=await User.aggregate([
@@ -175,7 +171,5 @@ const monthlyRevenue =asyncHandler(async(req,res)=>{
 
     res.status(200).json(new ApiResponse(200,totalRevenueGen,"Successfully fetched the total revenue generated in the whole year"))
 })
-
-
 
 export { deleteAuctionItem, getPaymentproofs, getpaymentDetails ,updateProofStatus,deletePaymentproof,fetchAllUsers,monthlyRevenue } ;

@@ -92,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
     //user ne jo password enter kara h wo match bhi toh karna h.
     const isMatch=await user.comparepassword(password);
     if(!isMatch){
-        throw new ApiError("Invalid credentials.", 401);
+        throw new ApiError("The password you have entered is incorrect", 401);
     }
     //agr match hojaye toh user ko login kardo and new token banado
     generateToken(user,"User logged in successfully",200,res);
@@ -118,7 +118,5 @@ const fetchLeaderBoard=asyncHandler(async(req,res)=>{
         const users=await User.find({moneySpent:{$gt:0}});
     const leaderBoard=users.sort((a,b)=>b.moneySpent-a.moneySpent).slice(0,10);
     res.status(200).json(new ApiResponse(200, leaderBoard, "Leaderboard fetched"));
-
-    
 })
 export { registerUser, loginUser,getUser,logoutUser,fetchLeaderBoard }

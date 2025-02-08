@@ -7,8 +7,6 @@ import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import { Bid } from "../models/bid.model.js";
 
-
-
 const addNewAuctionItem = asyncHandler(async (req, res) => {
     if (!req.files || Object.keys(req.files).length == 0) {
         throw new ApiError("item Image is required.", 400);
@@ -74,14 +72,12 @@ const myAuctionItem = asyncHandler(async (req, res) => {
     const myAuctions = await Auction.find({ createdBy: user._id });
     res.status(200).json(new ApiResponse(200, myAuctions, "Auctions fetched successfully"));
  });
-
 // to list all the auction items that the user has posted to the auction.
 const getAllItems = asyncHandler(async (req, res) => {
     // fetch all the items from the database
     const items = await Auction.find();
-    res.status(200).json(new ApiResponse(200, items, "Items fetched successfully"));
+    res.status(200).json(new ApiResponse(200, items, "Auctions Items fetched successfully"));
 });
-
 // to remove any auction item that the user has posted to the auction.
 const removeItem = asyncHandler(async (req, res) => {
     const {id}=req.params;
@@ -95,7 +91,7 @@ const removeItem = asyncHandler(async (req, res) => {
     if (!auctionItem) {
         throw new ApiError("Auction not found.", 404);
     }
-    // now we will be checking if the auction belongs to the user who is logged in.
+    // now we will be checking if the auction belongs to the user who is logged in(Auctioneer).
     if (auctionItem.createdBy.toString()!== req.user._id.toString()) {
         throw new ApiError("You are not authorized to remove this auction.", 403);
     }
@@ -104,8 +100,9 @@ const removeItem = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, "Auction removed successfully"));
 
 })
-const getAuctionDetails = asyncHandler(async (req, res) => {
     // to ge the auction details of any particular auction.
+const getAuctionDetails = asyncHandler(async (req, res) => {
+
     const { id } = req.params;
     //checking the format of the id in the database
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -122,6 +119,7 @@ const getAuctionDetails = asyncHandler(async (req, res) => {
     const bidders = auctionItem.bids.sort((a, b) => b.bid - a.bid);
     return res.status(200).json(new ApiResponse(200, { auctionItem, bidders }, "Auction details fetched successfully"));
 })
+// if the product is not sold then the user can republish the product.
 const republishItem = asyncHandler(async (req, res) => {
     const { id } = req.params;
 
@@ -129,30 +127,25 @@ const republishItem = asyncHandler(async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError("Invalid auction id.", 400);
     }
-
     // Fetch auction details
     let auctionItem = await Auction.findById(id);
     if (!auctionItem) {
         throw new ApiError("Auction not found.", 404);
     }
-
     // Verify ownership of auction
     if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
         throw new ApiError("You are not authorized to republish this auction.", 403);
     }
-
     // Ensure new start and end times are provided
     const { startTime, endTime } = req.body;
     if (!startTime || !endTime) {
         throw new ApiError("Please enter both start and end time.", 400);
     }
-
     // Check if the auction is running by comparing `endTime` with current time
     const existingEndTime = new Date(auctionItem.endTime);
     if (existingEndTime > Date.now()) {
         throw new ApiError("Auction is already running.", 400);
     }
-
     // Parse and validate start and end times
     const newStartTime = new Date(startTime);
     const newEndTime = new Date(endTime);
@@ -207,7 +200,4 @@ const republishItem = asyncHandler(async (req, res) => {
         endTime: formattedEndTime
     }, `Auction republished and will start on ${formattedStartTime}`));
 });
-
-
-
 export { addNewAuctionItem, getAllItems, getAuctionDetails, removeItem, myAuctionItem, republishItem };

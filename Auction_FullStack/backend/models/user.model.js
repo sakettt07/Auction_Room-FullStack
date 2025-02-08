@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema({
   phone: {
     type: String,
     minLength: [10, "Phone Number must contain exact 10 digits."],
-    maxLength: [10, "Phone Number must contain exact 10 digits."],
   },
   profileImage: {
     public_id: {

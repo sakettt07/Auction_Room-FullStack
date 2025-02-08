@@ -6,7 +6,13 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
 
 const placebid = asyncHandler(async (req, res) => {
-    // get the item on which we are going to bid
+    // TODO:
+    /*
+    First fetch the auction item on which we are going to place the bid.
+    Check if the auction item exists or not.
+    Check if the amount is provided or not with all the validations.
+    Check if he has bid on the particular item before or not.
+    */
     const { id } = req.params;
     const auctionitem = await Auction.findById(id);
     if (!auctionitem) {
@@ -58,7 +64,5 @@ const placebid = asyncHandler(async (req, res) => {
     } catch (error) {
         throw new ApiError(error.message || "Failed to place the bid", 500)
     }
-
-
 })
 export { placebid };
