@@ -3,6 +3,7 @@ import { User } from '../models/user.model.js';
 import { Paymentproof } from '../models/commissionProof.model.js';
 import { sendEmail } from "../utils/sendEmailFunc.js";
 import ApiError from '../middlewares/error.middleware.js';
+import {Commission} from '../models/commission.model.js';
 
 const verifyCommission = () => {
     cron.schedule("*/1 * * * *", async () => {
@@ -16,7 +17,7 @@ const verifyCommission = () => {
                     if (user.unpaidCommission >= paymentProofSchema.amount) {
                         updatedUserData = await User.findByIdAndUpdate(user._id, {
                             $inc: {
-                                moneySpent: paymentProofSchema.amount,
+                                // moneySpent: paymentProofSchema.amount,
                                 unpaidCommission: -paymentProofSchema.amount
                             }
                         }, { new: true })

@@ -4,6 +4,7 @@ import { calculateCommision } from '../controllers/commission.controller.js';;
 import { Bid } from '../models/bid.model.js'
 import { sendEmail } from '../utils/sendEmailFunc.js';
 import ApiError from "../middlewares/error.middleware.js";
+import { User } from '../models/user.model.js';
 
 const auctionEnded = () => {
     cron.schedule("*/1 * * * *", async () => {
@@ -23,7 +24,7 @@ const auctionEnded = () => {
                 const auctioneer = await User.findById(auction.createdBy);
                 auctioneer.unpaidCommission = commissionAmt;
                 if (highestBidder) {
-                    auctioneer.highestBidder = highestBidder.bidder.id;
+                    auction.highestBidder = highestBidder.bidder.id;
                     await auction.save();
                     const bidder = await User.findById(highestBidder.bidder.id);
                     const highestBidAmt = bidder.moneySpent + highestBidder.amount;
@@ -47,7 +48,7 @@ const auctionEnded = () => {
                     console.log("SUCCESSFULLY EMAIL SEND TO HIGHEST BIDDER");
                 }
                 else {
-                    await auctioneer.save();
+                    await auction.save();
                 }
             } catch (error) {
                 throw new ApiError(error.message || "Some error in the ended auction cron", 400);
