@@ -3,11 +3,11 @@ import { User } from '../models/user.model.js';
 import { Paymentproof } from '../models/commissionProof.model.js';
 import { sendEmail } from "../utils/sendEmailFunc.js";
 import ApiError from '../middlewares/error.middleware.js';
-import {Commission} from '../models/commission.model.js';
+import { Commission } from '../models/commission.model.js';
 
 const verifyCommission = () => {
     cron.schedule("*/1 * * * *", async () => {
-        console.log("Running verify comiision cron.");
+        console.log("Running verify commission cron.");
         const approvedProofs = await Paymentproof.find({ status: 'Approved' });
         for (const paymentProofSchema of approvedProofs) {
             try {

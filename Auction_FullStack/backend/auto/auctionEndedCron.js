@@ -27,7 +27,7 @@ const auctionEnded = () => {
                     auction.highestBidder = highestBidder.bidder.id;
                     await auction.save();
                     const bidder = await User.findById(highestBidder.bidder.id);
-                    const highestBidAmt = bidder.moneySpent + highestBidder.amount;
+                    // const highestBidAmt = bidder.moneySpent + highestBidder.amount;
                     await User.findByIdAndUpdate(bidder._id, {
                         $inc: {
                             moneySpent: highestBidder.amount,

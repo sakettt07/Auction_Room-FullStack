@@ -11,34 +11,36 @@ import bidRouter from "./routes/bid.routes.js";
 import commissionRouter from "./routes/commission.routes.js";
 import adminRouter from "./routes/platformAdmin.routes.js";
 import { auctionEnded } from "./auto/auctionEndedCron.js";
-import {verifyCommission} from "./auto/verifyCommissionCron.js"
-const app=express();
+import { verifyCommission } from "./auto/verifyCommissionCron.js"
+const app = express();
 config({
-    path:"./config/config.env"
+    path: "./config/config.env"
 })
 
 // connecting the frontend to backend
 app.use(cors(
-    {origin:[process.env.FRONTEND_URL],
-        methods:["GET","POST","PUT","DELETE"],
-        credentials:true,}
+    {
+        origin: [process.env.FRONTEND_URL],
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+    }
 ))
 
 app.use(express.json());
-app.use(express.urlencoded({extended:true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookie_parser());
 
 app.use(fileUpload({
-    useTempFiles:true,
-    tempFileDir:"/tmp/",
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
 }));
 
 //defining all the routes
-app.use("/api/v1/user",userRouter);
-app.use("/api/v1/auctionItem",auctionItemRouter);
-app.use("/api/v1/bid",bidRouter);
-app.use("/api/v1/commission",commissionRouter);
-app.use("/api/v1/platformadmin",adminRouter);
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/auctionItem", auctionItemRouter);
+app.use("/api/v1/bid", bidRouter);
+app.use("/api/v1/commission", commissionRouter);
+app.use("/api/v1/platformadmin", adminRouter);
 
 auctionEnded();
 verifyCommission();
@@ -46,4 +48,6 @@ connectDB();
 app.use(errorMiddleware)
 
 
-export {app};
+export { app };
+
+// testing the complete on Postman -- 6:58:00
