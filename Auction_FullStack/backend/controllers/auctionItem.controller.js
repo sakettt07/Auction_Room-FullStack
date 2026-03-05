@@ -71,7 +71,7 @@ const myAuctionItem = asyncHandler(async (req, res) => {
     // we will use the createdBy field in the Auction model.
     const myAuctions = await Auction.find({ createdBy: user._id });
     res.status(200).json(new ApiResponse(200, myAuctions, "Auctions fetched successfully"));
- });
+});
 // to list all the auction items that the user has posted to the auction.
 const getAllItems = asyncHandler(async (req, res) => {
     // fetch all the items from the database
@@ -80,7 +80,7 @@ const getAllItems = asyncHandler(async (req, res) => {
 });
 // to remove any auction item that the user has posted to the auction.
 const removeItem = asyncHandler(async (req, res) => {
-    const {id}=req.params;
+    const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError("Invalid auction id.", 400);
     }
@@ -92,7 +92,7 @@ const removeItem = asyncHandler(async (req, res) => {
         throw new ApiError("Auction not found.", 404);
     }
     // now we will be checking if the auction belongs to the user who is logged in(Auctioneer).
-    if (auctionItem.createdBy.toString()!== req.user._id.toString()) {
+    if (auctionItem.createdBy.toString() !== req.user._id.toString()) {
         throw new ApiError("You are not authorized to remove this auction.", 403);
     }
     // now we will be removing the auction from the database.
@@ -100,7 +100,7 @@ const removeItem = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, "Auction removed successfully"));
 
 })
-    // to ge the auction details of any particular auction.
+// to ge the auction details of any particular auction.
 const getAuctionDetails = asyncHandler(async (req, res) => {
 
     const { id } = req.params;
@@ -116,7 +116,8 @@ const getAuctionDetails = asyncHandler(async (req, res) => {
         throw new ApiError("Auction not found.", 404);
     }
     // now we will be fetching the bidders that will also be shown on the auction page if that item is in the auction
-    const bidders = auctionItem.bids.sort((a, b) => b.bid - a.bid);
+    const bidders = auctionItem.bids
+        .sort((a, b) => b.bidAmount - a.bidAmount);
     return res.status(200).json(new ApiResponse(200, { auctionItem, bidders }, "Auction details fetched successfully"));
 })
 // if the product is not sold then the user can republish the product.
@@ -158,10 +159,10 @@ const republishItem = asyncHandler(async (req, res) => {
 
     // manlo maine auction jeet liya and top the leader board for the highest bid but refuse to buy the item then
 
-    if(auctionItem.highestBidder){
-        const highestBidder=await User.findById(auctionItem.highestBidder);
-        highestBidder.moneySpent-=auctionItem.currentPrice;
-        highestBidder.auctionsWon-=1;
+    if (auctionItem.highestBidder) {
+        const highestBidder = await User.findById(auctionItem.highestBidder);
+        highestBidder.moneySpent -= auctionItem.currentPrice;
+        highestBidder.auctionsWon -= 1;
         highestBidder.save();
     }
 
@@ -170,9 +171,9 @@ const republishItem = asyncHandler(async (req, res) => {
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
         bid: [], // Reset bids
-        commissionCalulated: false ,
-        currentPrice:0,
-        highestBidder:null,
+        commissionCalulated: false,
+        currentPrice: 0,
+        highestBidder: null,
     };
 
     // Update auction item with new data
@@ -181,7 +182,7 @@ const republishItem = asyncHandler(async (req, res) => {
         runValidators: true,
         useFindAndModify: false,
     });
-    await Bid.deleteMany({auctionItem:auctionItem._id});
+    await Bid.deleteMany({ auctionItem: auctionItem._id });
 
     // Update user's unpaid commission (reset to zero)
     await User.findByIdAndUpdate(req.user._id, { unpaidCommission: 0 }, {
