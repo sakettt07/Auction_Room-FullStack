@@ -1,20 +1,41 @@
 import { createAuction } from "@/store/slices/auctionSlice";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import DatePicker from "react-datepicker";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "react-datepicker/dist/react-datepicker.css";
+import {
+  CameraIcon,
+  XMarkIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  TagIcon,
+  DocumentTextIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 
 const CreateAuction = () => {
-  const [image, setImage] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const { loading } = useSelector((state) => state.auction);
+  const { isAuthenticated, user } = useSelector((state) => state.user);
+
+  const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [condition, setCondition] = useState("");
-  const [startingBid, setStartingBid] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "",
+    condition: "",
+    startingBid: "",
+  });
+
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
 
   const auctionCategories = [
     "Electronics",
@@ -29,194 +50,338 @@ const CreateAuction = () => {
     "Books & Manuscripts",
   ];
 
-  const imageHandler = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setImage(file);
-      setImagePreview(reader.result);
-    };
+  const conditions = [
+    "New",
+    "Like New",
+    "Excellent",
+    "Good",
+    "Fair",
+    "For Parts",
+  ];
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.auction);
+  const handleImageUpload = (file) => {
+    if (!file) return;
 
-  const handleCreateAuction = (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("image", image);
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("category", category);
-    formData.append("condition", condition);
-    formData.append("startingBid", startingBid);
-    formData.append("startTime", startTime);
-    formData.append("endTime", endTime);
-    dispatch(createAuction(formData));
-  };
-
-  const { isAuthenticated, user } = useSelector((state) => state.user);
-  const navigateTo = useNavigate();
-  useEffect(() => {
-    if (!isAuthenticated || user.role !== "Auctioneer") {
-      navigateTo("/");
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file");
+      return;
     }
-  }, [isAuthenticated]);
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size should be less than 5MB");
+      return;
+    }
+
+    setImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    handleImageUpload(file);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const file = e.dataTransfer.files[0];
+    handleImageUpload(file);
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    setImagePreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const resetForm = () => {
+    setForm({
+      title: "",
+      description: "",
+      category: "",
+      condition: "",
+      startingBid: "",
+    });
+
+    removeImage();
+    setStartTime(null);
+    setEndTime(null);
+  };
+
+  const handleCreateAuction = async (e) => {
+    e.preventDefault();
+
+    if (!image) return alert("Please upload an image");
+    if (!startTime || !endTime) return alert("Select start & end time");
+
+    if (new Date(startTime) >= new Date(endTime))
+      return alert("End must be after start");
+
+    const formData = new FormData();
+
+    formData.append("itemImage", image);
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("category", form.category);
+    formData.append("condition", form.condition);
+    formData.append("startingPrice", form.startingBid);
+    formData.append("startTime", startTime.toISOString());
+    formData.append("endTime", endTime.toISOString());
+
+    const res = await dispatch(createAuction(formData));
+
+    if (res?.payload?.success) {
+      resetForm();
+      alert("Auction Created Successfully");
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== "Auctioneer") {
+      navigate("/");
+    }
+  }, [isAuthenticated, user, navigate]);
 
   return (
-    <article className="w-full ml-0 m-0 h-fit px-5 pt-20 lg:pl-[320px] flex flex-col">
-      <h1
-        className={`text-[#d6482b] text-2xl font-bold mb-2 min-[480px]:text-4xl md:text-6xl xl:text-7xl 2xl:text-8xl`}
-      >
-        Create Auction
-      </h1>
-      <div className="bg-white mx-auto w-full h-auto px-2 flex flex-col gap-4 items-center py-4 justify-center rounded-md">
-        <form
-          className="flex flex-col gap-5 w-full"
-          onSubmit={handleCreateAuction}
-        >
-          <p className="font-semibold text-xl md:text-2xl">Auction Detail</p>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none"
-              >
-                <option value="">Select Category</option>
-                {auctionCategories.map((element) => {
-                  return (
-                    <option key={element} value={element}>
-                      {element}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-24 px-4">
+      {/* 3 Column Layout */}
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 xl:grid-cols-[260px_1fr_260px] gap-8">
+        {/* LEFT BANNER */}
+        <div className="hidden xl:flex justify-center">
+          <div className="sticky top-32">
+            <img
+              src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif"
+              className="w-[260px] h-[600px] object-cover rounded-2xl shadow-xl"
+              alt="banner"
+            />
           </div>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">Condition</label>
-              <select
-                value={condition}
-                onChange={(e) => setCondition(e.target.value)}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none"
-              >
-                <option value="">Select Condition</option>
-                <option value="New">New</option>
-                <option value="Used">Used</option>
-              </select>
-            </div>
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">Starting Bid</label>
-              <input
-                type="number"
-                value={startingBid}
-                onChange={(e) => setStartingBid(e.target.value)}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="text-[16px] py-2 bg-transparent border-2 border-stone-500 focus:outline-none px-2 rounded-md"
-                rows={10}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">
-                Auction Starting Time
-              </label>
-              <DatePicker
-                selected={startTime}
-                onChange={(date) => setStartTime(date)}
-                showTimeSelect
-                timeFormat="HH:mm"
-                timeIntervals={15}
-                dateFormat={"MMMM d, yyyy h,mm aa"}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none w-full"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-1">
-              <label className="text-[16px] text-stone-600">
-                Auction End Time
-              </label>
-              <DatePicker
-                selected={endTime}
-                onChange={(date) => setEndTime(date)}
-                showTimeSelect
-                timeFormat="HH:mm"
-                timeIntervals={15}
-                dateFormat={"MMMM d, yyyy h,mm aa"}
-                className="text-[16px] py-2 bg-transparent border-b-[1px] border-b-stone-500 focus:outline-none w-full"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-4">
-            <label className="font-semibold text-xl md:text-2xl">
-              Auction Item Image
-            </label>
-            <div class="flex items-center justify-center w-full">
-              <label
-                for="dropzone-file"
-                class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
-              >
-                <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt={title} className="w-44 h-auto"/>
-                  ) : (
-                    <>
-                      <svg
-                        class="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400"
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 20 16"
-                      >
-                        <path
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                        />
-                      </svg>
-                    </>
-                  )}
+        </div>
 
-                  <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span class="font-semibold">Click to upload</span> or drag
-                    and drop
-                  </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">
-                    SVG, PNG, JPG or GIF (MAX. 800x400px)
-                  </p>
-                </div>
-                <input id="dropzone-file" type="file" class="hidden" onChange={imageHandler}/>
-              </label>
-            </div>
+        {/* CENTER FORM */}
+        <div className="max-w-5xl mx-auto w-full">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-[#D6482B] to-[#ff6b4a] bg-clip-text text-transparent">
+              Create New Auction
+            </h1>
+
+            <p className="text-gray-600 text-lg mt-4">
+              List your item for auction and reach thousands of potential
+              buyers.
+            </p>
           </div>
-          <button className="bg-[#D6482B] font-semibold hover:bg-[#b8381e] text-xl transition-all duration-300 py-2 px-4 rounded-md text-white w-[280px] mx-auto lg:w-[640px] my-4">{loading ? "Creating Auction..." : "Create Auction"}</button>
-        </form>
+
+          {/* Form */}
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-[#D6482B] to-[#ff6b4a]" />
+
+            <form onSubmit={handleCreateAuction} className="p-8 space-y-8">
+              {/* TITLE */}
+              <div>
+                <label className="flex items-center font-semibold mb-2">
+                  <TagIcon className="w-5 h-5 mr-2 text-[#D6482B]" />
+                  Auction Title
+                </label>
+
+                <input
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  placeholder="Vintage Rolex Submariner"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl focus:border-[#D6482B]"
+                  required
+                />
+              </div>
+
+              {/* CATEGORY + CONDITION */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="font-semibold mb-2 block">Category</label>
+
+                  <div className="relative">
+                    <select
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                      className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl appearance-none"
+                    >
+                      <option value="">Select category</option>
+
+                      {auctionCategories.map((cat) => (
+                        <option key={cat}>{cat}</option>
+                      ))}
+                    </select>
+
+                    <ChevronDownIcon className="absolute right-4 top-4 w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-semibold mb-2 block">Condition</label>
+
+                  <div className="relative">
+                    <select
+                      name="condition"
+                      value={form.condition}
+                      onChange={handleChange}
+                      className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl appearance-none"
+                    >
+                      <option value="">Select condition</option>
+
+                      {conditions.map((cond) => (
+                        <option key={cond}>{cond}</option>
+                      ))}
+                    </select>
+
+                    <ChevronDownIcon className="absolute right-4 top-4 w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              {/* STARTING PRICE */}
+
+              <div>
+                <label className="flex items-center font-semibold mb-2">
+                  <CurrencyDollarIcon className="w-5 h-5 mr-2 text-[#D6482B]" />
+                  Starting Bid
+                </label>
+
+                <input
+                  type="number"
+                  name="startingBid"
+                  value={form.startingBid}
+                  onChange={handleChange}
+                  placeholder="0.01"
+                  min="0.01"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl"
+                />
+              </div>
+
+              {/* DESCRIPTION */}
+
+              <div>
+                <label className="flex items-center font-semibold mb-2">
+                  <DocumentTextIcon className="w-5 h-5 mr-2 text-[#D6482B]" />
+                  Description
+                </label>
+
+                <textarea
+                  rows="5"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl"
+                />
+              </div>
+
+              {/* DATE PICKER */}
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <DatePicker
+                  selected={startTime}
+                  onChange={(date) => setStartTime(date)}
+                  showTimeSelect
+                  placeholderText="Start Time"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl"
+                />
+
+                <DatePicker
+                  selected={endTime}
+                  onChange={(date) => setEndTime(date)}
+                  showTimeSelect
+                  placeholderText="End Time"
+                  className="w-full px-5 py-4 border-2 border-gray-200 rounded-xl"
+                />
+              </div>
+
+              {/* IMAGE */}
+
+              <div>
+                <label className="flex items-center font-semibold mb-2">
+                  <CameraIcon className="w-5 h-5 mr-2 text-[#D6482B]" />
+                  Auction Image
+                </label>
+
+                <div
+                  className="border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer"
+                  onClick={() => fileInputRef.current.click()}
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
+
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      className="max-h-80 mx-auto rounded-xl"
+                    />
+                  ) : (
+                    <p>Drag image or click to upload</p>
+                  )}
+                </div>
+              </div>
+
+              {/* BUTTONS */}
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="flex-1 py-4 bg-gray-200 rounded-xl"
+                >
+                  Clear Form
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-4 bg-gradient-to-r from-[#D6482B] to-[#ff6b4a] text-white rounded-xl"
+                >
+                  {loading ? "Creating..." : "Create Auction"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* RIGHT BANNER */}
+
+        <div className="hidden xl:flex justify-center">
+          <div className="sticky top-32">
+            <img
+              src="https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif"
+              className="w-[500px] h-[600px] object-cover rounded-2xl shadow-xl"
+              alt="banner"
+            />
+          </div>
+        </div>
       </div>
-    </article>
+    </div>
   );
 };
 

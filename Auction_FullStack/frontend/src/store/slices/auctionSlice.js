@@ -2,19 +2,24 @@ import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 const auctionSlice = createSlice({
   name: "auction",
   initialState: {
     loading: false,
+    error: null,
     itemDetail: {},
     auctionDetail: {},
-    auctionBidders: {},
+    auctionBidders: [],
     myAuctions: [],
     allAuctions: [],
   },
   reducers: {
     createAuctionRequest(state, action) {
       state.loading = true;
+      state.error = null;
     },
     createAuctionSuccess(state, action) {
       state.loading = false;
@@ -24,6 +29,7 @@ const auctionSlice = createSlice({
     },
     getAllAuctionItemRequest(state, action) {
       state.loading = true;
+      state.error = null;
     },
     getAllAuctionItemSuccess(state, action) {
       state.loading = false;
@@ -31,9 +37,11 @@ const auctionSlice = createSlice({
     },
     getAllAuctionItemFailed(state, action) {
       state.loading = false;
+      state.error = action.payload || "Failed to fetch auctions";
     },
     getAuctionDetailRequest(state, action) {
       state.loading = true;
+      state.error = null;
     },
     getAuctionDetailSuccess(state, action) {
       state.loading = false;
@@ -42,46 +50,48 @@ const auctionSlice = createSlice({
     },
     getAuctionDetailFailed(state, action) {
       state.loading = false;
-      state.auctionDetail = state.auctionDetail;
-      state.auctionBidders = state.auctionBidders;
+      state.error = action.payload || "Failed to fetch auction details";
     },
     getMyAuctionsRequest(state, action) {
       state.loading = true;
+      state.error = null;
       state.myAuctions = [];
     },
     getMyAuctionsSuccess(state, action) {
       state.loading = false;
-      state.myAuctions = action.payload;
+      state.myAuctions = action.payload || [];
     },
     getMyAuctionsFailed(state, action) {
       state.loading = false;
+      state.error = action.payload || "Failed to fetch your auctions";
       state.myAuctions = [];
     },
     deleteAuctionItemRequest(state, action) {
       state.loading = true;
+      state.error = null;
     },
     deleteAuctionItemSuccess(state, action) {
       state.loading = false;
     },
     deleteAuctionItemFailed(state, action) {
       state.loading = false;
+      state.error = action.payload || "Failed to delete auction";
     },
     republishItemRequest(state, action) {
       state.loading = true;
+      state.error = null;
     },
     republishItemSuccess(state, action) {
       state.loading = false;
     },
     republishItemFailed(state, action) {
       state.loading = false;
+      state.error = action.payload || "Failed to republish auction";
     },
 
     resetSlice(state, action) {
       state.loading = false;
-      state.auctionDetail = state.auctionDetail;
-      state.itemDetail = state.itemDetail;
-      state.myAuctions = state.myAuctions;
-      state.allAuctions = state.allAuctions;
+      state.error = null;
     },
   },
 });
@@ -90,7 +100,7 @@ export const getAllAuctionItems = () => async (dispatch) => {
   dispatch(auctionSlice.actions.getAllAuctionItemRequest());
   try {
     const response = await axios.get(
-      "http://localhost:4000/api/v1/auctionItem/auctionitems",
+      `${API_BASE_URL}/api/v1/auctionItem/auctionitems`,
       { withCredentials: true }
     );
     dispatch(
@@ -98,7 +108,11 @@ export const getAllAuctionItems = () => async (dispatch) => {
     );
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.getAllAuctionItemFailed());
+    dispatch(
+      auctionSlice.actions.getAllAuctionItemFailed(
+        error?.response?.data?.message
+      )
+    );
     console.error(error);
     dispatch(auctionSlice.actions.resetSlice());
   }
@@ -108,13 +122,18 @@ export const getMyAuctionItems = () => async (dispatch) => {
   dispatch(auctionSlice.actions.getMyAuctionsRequest());
   try {
     const response = await axios.get(
-      "http://localhost:4000/api/v1/auctionItem/myauction",
+      `${API_BASE_URL}/api/v1/auctionItem/myauction`,
       { withCredentials: true }
     );
-    dispatch(auctionSlice.actions.getMyAuctionsSuccess(response.data.items));
+    // Backend wraps data in ApiResponse, use `data`
+    dispatch(auctionSlice.actions.getMyAuctionsSuccess(response.data.data));
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.getMyAuctionsFailed());
+    dispatch(
+      auctionSlice.actions.getMyAuctionsFailed(
+        error?.response?.data?.message
+      )
+    );
     console.error(error);
     dispatch(auctionSlice.actions.resetSlice());
   }
@@ -124,13 +143,17 @@ export const getAuctionDetail = (id) => async (dispatch) => {
   dispatch(auctionSlice.actions.getAuctionDetailRequest());
   try {
     const response = await axios.get(
-      `http://localhost:4000/api/v1/auctionItem/auction/${id}`,
+      `${API_BASE_URL}/api/v1/auctionItem/auction/${id}`,
       { withCredentials: true }
     );
     dispatch(auctionSlice.actions.getAuctionDetailSuccess(response.data.data));
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.getAuctionDetailFailed());
+    dispatch(
+      auctionSlice.actions.getAuctionDetailFailed(
+        error?.response?.data?.message
+      )
+    );
     console.error(error);
     dispatch(auctionSlice.actions.resetSlice());
   }
@@ -140,7 +163,7 @@ export const createAuction = (data) => async (dispatch) => {
   dispatch(auctionSlice.actions.createAuctionRequest());
   try {
     const response = await axios.post(
-      "http://localhost:4000/api/v1/auctionItem/createauction",
+      `${API_BASE_URL}/api/v1/auctionItem/createauction`,
       data,
       {
         withCredentials: true,
@@ -152,8 +175,12 @@ export const createAuction = (data) => async (dispatch) => {
     dispatch(getAllAuctionItems());
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.createAuctionFailed());
-    toast.error(error.response.data.message);
+    dispatch(
+      auctionSlice.actions.createAuctionFailed(
+        error?.response?.data?.message
+      )
+    );
+    toast.error(error?.response?.data?.message || "Failed to create auction");
     dispatch(auctionSlice.actions.resetSlice());
   }
 };
@@ -162,7 +189,7 @@ export const republishAuction = (id, data) => async (dispatch) => {
   dispatch(auctionSlice.actions.republishItemRequest());
   try {
     const response = await axios.put(
-      `http://localhost:4000/api/v1/auctionItem/republishauction/${id}`,
+      `${API_BASE_URL}/api/v1/auctionItem/republishauction/${id}`,
       data,
       {
         withCredentials: true,
@@ -175,9 +202,15 @@ export const republishAuction = (id, data) => async (dispatch) => {
     dispatch(getAllAuctionItems());
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.republishItemFailed());
-    toast.error(error.response.data.message);
-    console.error(error.response.data.message);
+    dispatch(
+      auctionSlice.actions.republishItemFailed(
+        error?.response?.data?.message
+      )
+    );
+    toast.error(
+      error?.response?.data?.message || "Failed to republish auction"
+    );
+    console.error(error?.response?.data?.message || error);
     dispatch(auctionSlice.actions.resetSlice());
   }
 };
@@ -186,7 +219,7 @@ export const deleteAuction = (id) => async (dispatch) => {
   dispatch(auctionSlice.actions.deleteAuctionItemRequest());
   try {
     const response = await axios.delete(
-      `http://localhost:4000/api/v1/auctionItem/removeItem/${id}`,
+      `${API_BASE_URL}/api/v1/auctionItem/removeItem/${id}`,
       {
         withCredentials: true,
       }
@@ -197,9 +230,15 @@ export const deleteAuction = (id) => async (dispatch) => {
     dispatch(getAllAuctionItems());
     dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
-    dispatch(auctionSlice.actions.deleteAuctionItemFailed());
-    toast.error(error.response.data.message);
-    console.error(error.response.data.message);
+    dispatch(
+      auctionSlice.actions.deleteAuctionItemFailed(
+        error?.response?.data?.message
+      )
+    );
+    toast.error(
+      error?.response?.data?.message || "Failed to delete auction item"
+    );
+    console.error(error?.response?.data?.message || error);
     dispatch(auctionSlice.actions.resetSlice());
   }
 };

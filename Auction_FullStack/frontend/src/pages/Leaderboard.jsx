@@ -3,7 +3,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 
 const Leaderboard = () => {
-  const { loading, leaderboard } = useSelector((state) => state.user);
+  const { loading, leaderboard = [] } = useSelector((state) => state.user);
   return (
     <>
       <section className="w-full ml-0 m-0 h-fit px-5 pt-20 lg:pl-[320px] flex flex-col">
@@ -29,7 +29,7 @@ const Leaderboard = () => {
                   </tr>
                 </thead>
                 <tbody className="text-gray-700">
-                  {leaderboard.slice(0, 100).map((element, index) => {
+                  {(leaderboard || []).slice(0, 100).map((element, index) => {
                     return (
                       <tr
                         key={element._id}

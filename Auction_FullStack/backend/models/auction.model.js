@@ -35,7 +35,8 @@ const auctionSchema = new mongoose.Schema({
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true
+        required: true,
+        index: true,
     },
     bids: [
         {
@@ -55,8 +56,13 @@ const auctionSchema = new mongoose.Schema({
     },
     commissionCalc: {
         type: Boolean,
-        default: false
+        default: false,
+        index: true,
     },
 }, { timestamps: true });
+
+// Indexes to optimize common queries (endTime-based and creator-based)
+auctionSchema.index({ endTime: 1, commissionCalc: 1 });
+auctionSchema.index({ createdBy: 1, endTime: 1 });
 
 export const Auction = mongoose.model("Auction", auctionSchema);

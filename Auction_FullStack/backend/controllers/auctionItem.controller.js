@@ -13,7 +13,7 @@ const addNewAuctionItem = asyncHandler(async (req, res) => {
     }
     const { itemImage } = req.files;
 
-    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg"]
+    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg", "image/JPG"]
     if (!allowedFormats.includes(itemImage.mimetype)) {
         throw new ApiError("Invalid item Image format. Only PNG, JPEG, WEBP, JPG are allowed.", 400);
     }
@@ -170,8 +170,8 @@ const republishItem = asyncHandler(async (req, res) => {
     const updateData = {
         startTime: newStartTime.toISOString(),
         endTime: newEndTime.toISOString(),
-        bid: [], // Reset bids
-        commissionCalulated: false,
+        bids: [], // Reset bids
+        commissionCalc: false,
         currentPrice: 0,
         highestBidder: null,
     };

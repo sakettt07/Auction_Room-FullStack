@@ -10,11 +10,14 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    selected: false,
+    select: false,
     minLength: [8, "Password must contain at least 8 characters."],
   },
   email: {
     type: String,
+    index: true,
+    unique: true,
+    sparse: true,
   },
   address: {
     type: String,
@@ -61,6 +64,7 @@ const userSchema = new mongoose.Schema({
   moneySpent: {
     type: Number,
     default: 0,
+    index: true,
   },
 }, { timestamps: true });
 

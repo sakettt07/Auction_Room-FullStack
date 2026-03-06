@@ -13,8 +13,11 @@ const Card = ({
 }) => {
   const calculateTimeLeft = () => {
     const now = new Date();
-    const startDiff = new Date(startTime) - now;
-    const endDiff = new Date(endTime) - now;
+    const start = startTime ? new Date(startTime) : null;
+    const end = endTime ? new Date(endTime) : null;
+
+    const startDiff = start ? start.getTime() - now.getTime() : 0;
+    const endDiff = end ? end.getTime() - now.getTime() : 0;
 
     if (startDiff > 0) {
       return {
@@ -41,7 +44,7 @@ const Card = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [startTime, endTime]);
 
   const formatTime = (time) => {
     const days = Math.floor(time / (1000 * 60 * 60 * 24));
@@ -55,13 +58,15 @@ const Card = ({
   };
 
   const now = new Date();
+  const start = startTime ? new Date(startTime) : null;
+  const end = endTime ? new Date(endTime) : null;
 
   const status =
-    now < new Date(startTime)
+    start && now < start
       ? "Upcoming"
-      : now > new Date(endTime)
-        ? "Ended"
-        : "Live";
+      : end && now > end
+      ? "Ended"
+      : "Live";
 
   const statusColor =
     status === "Live"
@@ -74,6 +79,9 @@ const Card = ({
     ? Math.max(...bids.map((b) => b.bidAmount))
     : startingBid;
 
+  const safeImgSrc = imgSrc || "/placeholder-auction.png";
+  const safeTitle = title || "Auction item";
+
   return (
     <Link
       to={`/auction/item/${id}`}
@@ -81,8 +89,8 @@ const Card = ({
     >
       <div className="relative">
         <img
-          src={imgSrc}
-          alt={title}
+          src={safeImgSrc}
+          alt={safeTitle}
           className="w-full h-44 object-cover group-hover:scale-105 transition"
         />
 
@@ -95,7 +103,7 @@ const Card = ({
 
       <div className="p-4 flex flex-col gap-2">
         <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-[#d6482b]">
-          {title}
+          {safeTitle}
         </h3>
 
         <p className="text-sm text-gray-500">Starting Bid</p>

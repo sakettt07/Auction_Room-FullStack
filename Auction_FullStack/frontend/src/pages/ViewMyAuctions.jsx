@@ -6,18 +6,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 const ViewMyAuctions = () => {
-  const { myAuctions, loading } = useSelector((state) => state.auction);
+  const { myAuctions = [], loading } = useSelector((state) => state.auction);
   const { user, isAuthenticated } = useSelector((state) => state.user);
 
   const dispatch = useDispatch();
   const navigateTo = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated || user.role !== "Auctioneer") {
+    if (!isAuthenticated || user?.role !== "Auctioneer") {
       navigateTo("/");
+      return;
     }
     dispatch(getMyAuctionItems());
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, navigateTo, isAuthenticated, user]);
 
   return (
     <>
@@ -40,10 +41,10 @@ const ViewMyAuctions = () => {
                 return (
                   <CardTwo
                     title={element.title}
-                    startingBid={element.startingBid}
+                    startingBid={element.startingPrice}
                     endTime={element.endTime}
                     startTime={element.startTime}
-                    imgSrc={element.image?.url}
+                    imgSrc={element.itemImage?.url}
                     id={element._id}
                     key={element._id}
                   />
@@ -53,8 +54,7 @@ const ViewMyAuctions = () => {
               <h3 className="text-[#666] text-xl font-semibold mb-2 min-[480px]:text-xl md:text-2xl lg:text-3xl mt-5">
                 You have not posted any auction.
               </h3>
-            )}{" "}
-            :
+            )}
           </div>
         )}
       </div>

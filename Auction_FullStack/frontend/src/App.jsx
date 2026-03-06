@@ -28,7 +28,7 @@ const App = () => {
     dispatch(fetchUser());
     dispatch(getAllAuctionItems());
     dispatch(fetchLeaderboard());
-  }, []);
+  }, [dispatch]);
   return (
     <Router>
       <SideDrawer />

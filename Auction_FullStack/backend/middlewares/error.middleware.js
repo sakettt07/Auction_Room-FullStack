@@ -1,37 +1,48 @@
-class ApiError extends Error{
-    constructor(message,statusCode){
-        super(message);
-        this.statusCode=statusCode;
-    }
+class ApiError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode ?? 500;
+  }
 }
+
 export const errorMiddleware = (err, req, res, next) => {
-    err.message = err.message || "Internal server error.";
-    err.statusCode = err.statusCode || 500;
-  
-    if (err.name === "JsonWebTokenError") {
-      const message = "Json web token is invalid, Try again.";
-      err = new ErrorHandler(message, 400);
-    }
-    if (err.name === "TokenExpiredError") {
-      const message = "Json web token is expired, Try again.";
-      err = new ErrorHandler(message, 400);
-    }
-    // for the wrong format or value typeee
-    if (err.name === "CastError") {
-      const message = `Invalid ${err.path}`;
-      err = new ErrorHandler(message, 400);
-    }
-  
-    const errorMessage = err.errors
-      ? Object.values(err.errors)
-          .map((error) => error.message)
-          .join(" ")
-      : err.message;
-  
-    return res.status(err.statusCode).json({
-      success: false,
+  const baseError =
+    err instanceof ApiError
+      ? err
+      : new ApiError(err.message || "Internal server error.", err.statusCode || 500);
+
+  let finalError = baseError;
+
+  if (err.name === "JsonWebTokenError") {
+    finalError = new ApiError("Json web token is invalid, Try again.", 400);
+  }
+
+  if (err.name === "TokenExpiredError") {
+    finalError = new ApiError("Json web token is expired, Try again.", 400);
+  }
+
+  if (err.name === "CastError") {
+    finalError = new ApiError(`Invalid ${err.path}`, 400);
+  }
+
+  const errorMessage = finalError.errors
+    ? Object.values(finalError.errors)
+        .map((error) => error.message)
+        .join(" ")
+    : finalError.message;
+
+  if (process.env.NODE_ENV !== "test") {
+    console.error("[ERROR]", {
       message: errorMessage,
+      statusCode: finalError.statusCode,
+      stack: finalError.stack,
     });
-  };
-  
-  export default ApiError;
+  }
+
+  return res.status(finalError.statusCode || 500).json({
+    success: false,
+    message: errorMessage,
+  });
+};
+
+export default ApiError;

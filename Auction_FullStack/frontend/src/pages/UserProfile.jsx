@@ -2,229 +2,174 @@ import Spinner from "@/custom-components/Spinner";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import {
+  UserIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  MapPinIcon,
+  CalendarDaysIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+} from "@heroicons/react/24/outline";
 
 const UserProfile = () => {
   const { user, isAuthenticated, loading } = useSelector((state) => state.user);
-  console.log(" its me the user----", user);
   const navigateTo = useNavigate();
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigateTo("/");
     }
   }, [isAuthenticated]);
+
+  const InfoField = ({ icon: Icon, label, value }) => (
+    <div className="flex flex-col bg-gray-50 rounded-xl p-4 border border-gray-200">
+      <span className="flex items-center text-gray-500 text-sm mb-1">
+        {Icon && <Icon className="w-4 h-4 mr-2 text-[#D6482B]" />}
+        {label}
+      </span>
+      <span className="font-medium text-gray-800 break-words">
+        {value || "—"}
+      </span>
+    </div>
+  );
+
   return (
-    <>
-      <section className="w-full ml-0 m-0 h-fit px-5 pt-20 lg:pl-[320px] flex flex-col min-h-screen py-4 justify-start">
-        {loading ? (
-          <Spinner />
-        ) : (
-          <>
-            <div className="bg-white mx-auto w-full h-auto px-2 flex flex-col gap-4 items-center py-4 justify-center rounded-md">
-              <img
-                src={user?.profileImage?.url}
-                alt="/imageHolder.jpg"
-                className="w-36 h-36 rounded-full"
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-6 py-24 lg:pl-[320px]">
+      {loading ? (
+        <Spinner />
+      ) : (
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* PROFILE HEADER */}
+
+          <div className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row items-center gap-6">
+            <img
+              src={user?.profileImage?.url}
+              alt="profile"
+              className="w-32 h-32 rounded-full object-cover border-4 border-[#D6482B]/20 shadow-md"
+            />
+
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl font-bold text-gray-800">
+                {user?.userName}
+              </h2>
+
+              <p className="text-gray-500">{user?.email}</p>
+
+              <span className="inline-block mt-2 px-4 py-1 text-sm rounded-full bg-[#D6482B]/10 text-[#D6482B] font-semibold">
+                {user?.role}
+              </span>
+            </div>
+          </div>
+
+          {/* PERSONAL DETAILS */}
+
+          <div className="bg-white rounded-3xl shadow-xl p-8">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+              Personal Details
+            </h3>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <InfoField
+                icon={UserIcon}
+                label="Username"
+                value={user?.userName}
               />
 
-              <div className="mb-6 w-full">
-                <h3 className="text-xl font-semibold mb-4">Personal Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.userName}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Email
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.email}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Phone
-                    </label>
-                    <input
-                      type="number"
-                      defaultValue={user?.phone}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.address}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Role
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.role}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Joined On
-                    </label>
-                    <input
-                      type="text"
-                      defaultValue={user?.createdAt?.substring(0, 10)}
-                      className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                      disabled
-                    />
-                  </div>
-                </div>
-              </div>
+              <InfoField
+                icon={EnvelopeIcon}
+                label="Email"
+                value={user?.email}
+              />
 
-              {user?.role === "Auctioneer" && (
-                <div className="mb-6 w-full">
-                  <h3 className="text-xl font-semibold mb-4">
-                    Payment Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Bank Name
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={
-                          user?.paymentMethods.bankTransfer.bankName
-                        }
-                        className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Bank Account (IBAN)
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={
-                          user?.paymentMethods.bankTransfer?.bankAccountNumber
-                        }
-                        className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        User Name On Bank Account
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={
-                          user?.paymentMethods.bankTransfer.bankAccountName
-                        }
-                        className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Easypaisa Account Number
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={
-                          user?.paymentMethods?.easypaisa
-                            ?.easypaisaAccountNumber
-                        }
-                        className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Paypal Email
-                      </label>
-                      <input
-                        type="text"
-                        defaultValue={user?.paymentMethods.paypal.paypalEmail}
-                        className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                        disabled
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+              <InfoField icon={PhoneIcon} label="Phone" value={user?.phone} />
 
-              <div className="mb-6 w-full">
-                <h3 className="text-xl font-semibold mb-4">
-                  Other User Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {user?.role === "Auctioneer" && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Unpaid Commissions
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue={user?.unpaidCommission}
-                          className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                          disabled
-                        />
-                      </div>
-                    </>
-                  )}
-                  {user?.role === "Bidder" && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Auctions Won
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue={user?.auctionsWon}
-                          className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                          disabled
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Money Spent
-                        </label>
-                        <input
-                          type="text"
-                          defaultValue={user?.moneySpent}
-                          className="w-ful mt-1 p-2 border-gray-300 rounded-md focus:outline-none"
-                          disabled
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+              <InfoField
+                icon={MapPinIcon}
+                label="Address"
+                value={user?.address}
+              />
+
+              <InfoField
+                icon={CalendarDaysIcon}
+                label="Joined On"
+                value={user?.createdAt?.substring(0, 10)}
+              />
+            </div>
+          </div>
+
+          {/* PAYMENT DETAILS */}
+
+          {user?.role === "Auctioneer" && (
+            <div className="bg-white rounded-3xl shadow-xl p-8">
+              <h3 className="text-xl font-semibold text-gray-800 mb-6">
+                Payment Details
+              </h3>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <InfoField
+                  icon={BanknotesIcon}
+                  label="Bank Name"
+                  value={user?.paymentMethods?.bankTransfer?.bankName}
+                />
+
+                <InfoField
+                  icon={CreditCardIcon}
+                  label="Bank Account"
+                  value={user?.paymentMethods?.bankTransfer?.bankAccountNumber}
+                />
+
+                <InfoField
+                  icon={UserIcon}
+                  label="Account Holder Name"
+                  value={user?.paymentMethods?.bankTransfer?.bankAccountName}
+                />
+
+                <InfoField
+                  label="Easypaisa Number"
+                  value={
+                    user?.paymentMethods?.easypaisa?.easypaisaAccountNumber
+                  }
+                />
+
+                <InfoField
+                  label="Paypal Email"
+                  value={user?.paymentMethods?.paypal?.paypalEmail}
+                />
               </div>
             </div>
-          </>
-        )}
-      </section>
-    </>
+          )}
+
+          {/* STATS */}
+
+          <div className="bg-white rounded-3xl shadow-xl p-8">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+              Account Statistics
+            </h3>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {user?.role === "Auctioneer" && (
+                <InfoField
+                  label="Unpaid Commission"
+                  value={`₹ ${user?.unpaidCommission}`}
+                />
+              )}
+
+              {user?.role === "Bidder" && (
+                <>
+                  <InfoField label="Auctions Won" value={user?.auctionsWon} />
+
+                  <InfoField
+                    label="Money Spent"
+                    value={`₹ ${user?.moneySpent}`}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
   );
 };
 
