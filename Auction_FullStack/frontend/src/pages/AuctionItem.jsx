@@ -301,7 +301,7 @@ const AuctionItem = () => {
                   </p>
                 </div>
                 <span
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold ${
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-semibold ${
                     isAuctionRunning
                       ? "bg-green-100 text-green-700 border border-green-200"
                       : auctionDetail?.startTime &&

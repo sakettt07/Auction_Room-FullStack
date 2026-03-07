@@ -13,7 +13,7 @@ const addNewAuctionItem = asyncHandler(async (req, res) => {
     }
     const { itemImage } = req.files;
 
-    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg", "image/JPG"]
+    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/jpg", "image/JPG"]
     if (!allowedFormats.includes(itemImage.mimetype)) {
         throw new ApiError("Invalid item Image format. Only PNG, JPEG, WEBP, JPG are allowed.", 400);
     }
@@ -27,10 +27,11 @@ const addNewAuctionItem = asyncHandler(async (req, res) => {
         throw new ApiError("Start Time should be in the future.", 400);
     }
     if (new Date(startTime) >= new Date(endTime)) {
-        throw new ApiError("Start Time should not be in the future.", 400);
+        throw new ApiError("End Time must be after Start Time.", 400);
     }
+    const now = new Date();
     // now we will check if a person is already having a running auction
-    const auctionRunning = await Auction.findOne({ createdBy: req.user.id, endTime: { $gt: Date.now() } });
+    const auctionRunning = await Auction.findOne({ createdBy: req.user.id, startTime: { $lte: now }, endTime: { $gt: now } });
     if (auctionRunning) {
         throw new ApiError("You can't have two running auctions at the same time.", 400);
     }

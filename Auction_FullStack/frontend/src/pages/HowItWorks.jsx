@@ -60,7 +60,7 @@ const HowItWorks = () => {
         {/* Hero */}
         <div className="w-full">
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-[#d6482b]/80 mb-3">
-            how primebid works
+            how AuctionSpace works
           </p>
           <h1 className="text-3xl md:text-5xl xl:text-6xl font-bold text-slate-900 mb-4">
             From listing to winning,
@@ -68,8 +68,9 @@ const HowItWorks = () => {
             be transparent.
           </h1>
           <p className="text-base md:text-lg text-slate-600 max-w-2xl">
-            Whether you are a first-time bidder or a power auctioneer, PrimeBid
-            guides you through a clear, secure, and rewarding auction journey.
+            Whether you are a first-time bidder or a power auctioneer,
+            AuctionSpace guides you through a clear, secure, and rewarding
+            auction journey.
           </p>
         </div>
 

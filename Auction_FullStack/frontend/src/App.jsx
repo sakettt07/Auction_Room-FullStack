@@ -49,7 +49,7 @@ const App = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/me" element={<UserProfile />} />
       </Routes>
-      <ToastContainer position="top-right" />
+      <ToastContainer position="top-center" />
     </Router>
   );
 };

@@ -93,9 +93,9 @@ const Home = () => {
   ];
 
   const stats = [
-    { value: "12K+", label: "Active Bidders", icon: UserGroupIcon },
-    { value: "4K+", label: "Auctions Completed", icon: TrophyIcon },
-    { value: "₹3Cr+", label: "Total Value Traded", icon: CurrencyDollarIcon },
+    { value: "12+", label: "Active Bidders", icon: UserGroupIcon },
+    { value: "40+", label: "Auctions Completed", icon: TrophyIcon },
+    { value: "₹3Lk+", label: "Total Value Traded", icon: CurrencyDollarIcon },
     { value: "98%", label: "Successful Auctions", icon: SparklesIcon },
   ];
 
@@ -226,6 +226,9 @@ const Home = () => {
               </div>
             )}
           </div>
+          <div ref={featuredRef}>
+            <FeaturedAuctions />
+          </div>
 
           {/* STATS */}
           <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -245,9 +248,6 @@ const Home = () => {
                 <p className="text-gray-600 mt-2">{stat.label}</p>
               </div>
             ))}
-          </div>
-          <div ref={featuredRef}>
-            <FeaturedAuctions />
           </div>
 
           {/* HOW IT WORKS */}

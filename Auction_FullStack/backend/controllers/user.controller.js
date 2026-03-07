@@ -15,7 +15,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
     const { profileImage } = req.files;
 
-    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg"]
+    const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg", "image/avif"]
     if (!allowedFormats.includes(profileImage.mimetype)) {
         throw new ApiError("Invalid Profile Image format. Only PNG, JPEG, WEBP, JPG are allowed.", 400);
     }
@@ -25,16 +25,15 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!userName || !password || !email || !phone || !address || !role) {
         throw new ApiError("All fields are required.", 400);
     }
-    if (role == "Auctioneer") {
+    if (role === "Auctioneer") {
         if (!bankAccountNumber || !bankAccountName || !bankName) {
             throw new ApiError("Bank Account Details are required for Auctioneer.", 400);
         }
     }
-    if (!stripeEmail) {
-        throw new ApiError("Please provide your stripe Email");
-    }
-    if (!paypalEmail) {
-        throw new ApiError("Please provide your Paypal Email");
+    if (role !== "Bidder") {
+        if (!stripeEmail && !paypalEmail) {
+            throw new ApiError("Please provide either Stripe or Paypal Email", 400);
+        }
     }
     const isRegistered = await User.findOne({ email });
     if (isRegistered) {
@@ -120,7 +119,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     }).json(new ApiResponse(200, {}, "User Logged out Successfully"));
 })
 const fetchLeaderBoard = asyncHandler(async (req, res) => {
-    const users = await User.find({ moneySpent: { $gt: 0 } });
+    const users = await User.find({ moneySpent: { $gt: 0 } }).select("-phone");
     const leaderBoard = users.sort((a, b) => b.moneySpent - a.moneySpent).slice(0, 10);
     res.status(200).json(new ApiResponse(200, leaderBoard, "Leaderboard fetched"));
 })

@@ -1,293 +1,357 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RiAuctionFill } from "react-icons/ri";
 import { MdLeaderboard, MdDashboard } from "react-icons/md";
 import { SiGooglesearchconsole } from "react-icons/si";
 import { BsFillInfoSquareFill } from "react-icons/bs";
-import { FaFacebook } from "react-icons/fa";
+import { FaFacebook, FaUserCircle, FaEye } from "react-icons/fa";
 import { RiInstagramFill } from "react-icons/ri";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoIosCreate } from "react-icons/io";
-import { FaUserCircle } from "react-icons/fa";
 import { FaFileInvoiceDollar } from "react-icons/fa6";
-import { FaEye } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/slices/userSlice";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { XMarkIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 
 const SideDrawer = () => {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   const { isAuthenticated, user } = useSelector((state) => state.user);
-
+  const location = useLocation();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsOpen(false);
+    setActiveDropdown(null);
+  }, [location]);
+
   const handleLogout = () => {
     dispatch(logout());
-    setOpen(false);
+    setIsOpen(false);
   };
 
-  const closeMenu = () => setOpen(false);
+  const toggleDropdown = (menu) => {
+    setActiveDropdown(activeDropdown === menu ? null : menu);
+  };
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const navLinks = [
+    { path: "/auctions", label: "Auctions", icon: RiAuctionFill },
+    { path: "/leaderboard", label: "Leaderboard", icon: MdLeaderboard },
+    {
+      path: "/how-it-works-info",
+      label: "How it works",
+      icon: SiGooglesearchconsole,
+    },
+    { path: "/about", label: "About Us", icon: BsFillInfoSquareFill },
+  ];
+
+  const auctioneerLinks = [
+    {
+      path: "/submit-commission",
+      label: "Commission",
+      icon: FaFileInvoiceDollar,
+    },
+    { path: "/create-auction", label: "Create", icon: IoIosCreate },
+    { path: "/view-my-auctions", label: "My auctions", icon: FaEye },
+  ];
 
   return (
     <>
-      {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-[#f6f4f0]/95 border-b border-slate-200 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" onClick={closeMenu} className="flex items-center gap-2">
-            <span className="text-2xl font-semibold">
-              Prime<span className="text-[#D6482b]">Bid</span>
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-800">
+      {/* Header */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md shadow-md py-2"
+            : "bg-white/80 backdrop-blur-sm py-3"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
             <Link
-              to="/auctions"
-              className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
+              to="/"
+              className="flex items-center gap-2 group"
+              onClick={() => setIsOpen(false)}
             >
-              <RiAuctionFill /> Auctions
+              <span className="text-xl sm:text-2xl font-bold">
+                Auction
+                <span className="text-[#D6482B] group-hover:text-[#b33a22] transition-colors">
+                  Space
+                </span>
+              </span>
             </Link>
-            <Link
-              to="/leaderboard"
-              className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-            >
-              <MdLeaderboard /> Leaderboard
-            </Link>
-            <Link
-              to="/how-it-works-info"
-              className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-            >
-              <SiGooglesearchconsole /> How it works
-            </Link>
-            <Link
-              to="/about"
-              className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-            >
-              <BsFillInfoSquareFill /> About Us
-            </Link>
-            {isAuthenticated && user && (
-              <Link
-                to="/me"
-                className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-              >
-                <FaUserCircle /> Profile
-              </Link>
-            )}
-            {isAuthenticated && user && user.role === "Auctioneer" && (
-              <>
-                <Link
-                  to="/submit-commission"
-                  className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-                >
-                  <FaFileInvoiceDollar /> Commission
-                </Link>
-                <Link
-                  to="/create-auction"
-                  className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-                >
-                  <IoIosCreate /> Create
-                </Link>
-                <Link
-                  to="/view-my-auctions"
-                  className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-                >
-                  <FaEye /> My auctions
-                </Link>
-              </>
-            )}
-            {isAuthenticated && user && user.role === "Super Admin" && (
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1 hover:text-[#D6482b] transition-colors"
-              >
-                <MdDashboard /> Dashboard
-              </Link>
-            )}
-          </nav>
 
-          {/* Auth actions */}
-          <div className="hidden md:flex items-center gap-3">
-            {!isAuthenticated ? (
-              <>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navLinks.map((link) => (
                 <Link
-                  to="/sign-up"
-                  className="bg-[#D6482B] text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-[#b8381e] transition-colors"
+                  key={link.path}
+                  to={link.path}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive(link.path)
+                      ? "bg-[#D6482B] text-white shadow-md"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
+                  }`}
                 >
-                  Sign Up
+                  <link.icon className="text-lg" />
+                  {link.label}
                 </Link>
-                <Link
-                  to="/login"
-                  className="border border-[#DECCBE] text-sm font-semibold text-[#DECCBE] px-4 py-2 rounded-md hover:bg-[#fffefd] hover:text-[#fdba88] transition-colors"
-                >
-                  Login
-                </Link>
-              </>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="bg-[#D6482B] text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-[#b8381e] transition-colors"
-              >
-                Logout
-              </button>
-            )}
-          </div>
+              ))}
 
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md bg-[#D6482B] text-white text-2xl p-2 hover:bg-[#b8381e] transition-colors"
-            onClick={() => setOpen((prev) => !prev)}
-          >
-            <GiHamburgerMenu />
-          </button>
-        </div>
-
-        {/* Mobile menu */}
-        {open && (
-          <div className="md:hidden border-t border-slate-200 bg-[#f6f4f0]">
-            <div className="px-4 py-3 flex flex-col gap-3 text-sm font-semibold text-slate-800">
-              <Link
-                to="/auctions"
-                onClick={closeMenu}
-                className="flex items-center gap-2 hover:text-[#D6482b]"
-              >
-                <RiAuctionFill /> Auctions
-              </Link>
-              <Link
-                to="/leaderboard"
-                onClick={closeMenu}
-                className="flex items-center gap-2 hover:text-[#D6482b]"
-              >
-                <MdLeaderboard /> Leaderboard
-              </Link>
-              {isAuthenticated && user && user.role === "Auctioneer" && (
-                <>
-                  <Link
-                    to="/submit-commission"
-                    onClick={closeMenu}
-                    className="flex items-center gap-2 hover:text-[#D6482b]"
+              {/* Auctioneer Dropdown */}
+              {isAuthenticated && user?.role === "Auctioneer" && (
+                <div className="relative group">
+                  <button
+                    onClick={() => toggleDropdown("auctioneer")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      auctioneerLinks.some((link) => isActive(link.path))
+                        ? "bg-[#D6482B] text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
+                    }`}
                   >
-                    <FaFileInvoiceDollar /> Submit Commission
-                  </Link>
-                  <Link
-                    to="/create-auction"
-                    onClick={closeMenu}
-                    className="flex items-center gap-2 hover:text-[#D6482b]"
-                  >
-                    <IoIosCreate /> Create Auction
-                  </Link>
-                  <Link
-                    to="/view-my-auctions"
-                    onClick={closeMenu}
-                    className="flex items-center gap-2 hover:text-[#D6482b]"
-                  >
-                    <FaEye /> View My Auctions
-                  </Link>
-                </>
+                    <IoIosCreate className="text-lg" />
+                    Auctioneer
+                    <ChevronDownIcon className="w-4 h-4 ml-1" />
+                  </button>
+
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-100">
+                    {auctioneerLinks.map((link) => (
+                      <Link
+                        key={link.path}
+                        to={link.path}
+                        className={`flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition-colors ${
+                          isActive(link.path)
+                            ? "text-[#D6482B] font-medium"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        <link.icon className="text-lg" />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               )}
-              {isAuthenticated && user && user.role === "Super Admin" && (
-                <Link
-                  to="/dashboard"
-                  onClick={closeMenu}
-                  className="flex items-center gap-2 hover:text-[#D6482b]"
-                >
-                  <MdDashboard /> Dashboard
-                </Link>
-              )}
+
+              {/* Profile Link */}
               {isAuthenticated && (
                 <Link
                   to="/me"
-                  onClick={closeMenu}
-                  className="flex items-center gap-2 hover:text-[#D6482b]"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive("/me")
+                      ? "bg-[#D6482B] text-white"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
+                  }`}
                 >
-                  <FaUserCircle /> Profile
+                  <FaUserCircle className="text-lg" />
+                  Profile
                 </Link>
               )}
-              <Link
-                to="/how-it-works-info"
-                onClick={closeMenu}
-                className="flex items-center gap-2 hover:text-[#D6482b]"
-              >
-                <SiGooglesearchconsole /> How it works
-              </Link>
-              <Link
-                to="/about"
-                onClick={closeMenu}
-                className="flex items-center gap-2 hover:text-[#D6482b]"
-              >
-                <BsFillInfoSquareFill /> About Us
-              </Link>
 
-              <div className="pt-2 flex flex-col gap-2">
-                {!isAuthenticated ? (
-                  <>
-                    <Link
-                      to="/sign-up"
-                      onClick={closeMenu}
-                      className="bg-[#D6482B] text-white text-sm font-semibold px-4 py-2 rounded-md text-center hover:bg-[#b8381e]"
-                    >
-                      Sign Up
-                    </Link>
-                    <Link
-                      to="/login"
-                      onClick={closeMenu}
-                      className="border border-[#DECCBE] text-sm font-semibold text-[#DECCBE] px-4 py-2 rounded-md text-center hover:bg-[#fffefd] hover:text-[#fdba88]"
-                    >
-                      Login
-                    </Link>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleLogout}
-                    className="bg-[#D6482B] text-white text-sm font-semibold px-4 py-2 rounded-md text-center hover:bg-[#b8381e]"
+              {/* Admin Dashboard */}
+              {isAuthenticated && user?.role === "Super Admin" && (
+                <Link
+                  to="/dashboard"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isActive("/dashboard")
+                      ? "bg-[#D6482B] text-white"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
+                  }`}
+                >
+                  <MdDashboard className="text-lg" />
+                  Dashboard
+                </Link>
+              )}
+            </nav>
+
+            {/* Desktop Auth Buttons */}
+            <div className="hidden lg:flex items-center gap-3">
+              {!isAuthenticated ? (
+                <>
+                  <Link
+                    to="/login"
+                    className="px-5 py-2 text-sm font-medium text-gray-700 hover:text-[#D6482B] transition-colors"
                   >
-                    Logout
-                  </button>
-                )}
-              </div>
+                    Login
+                  </Link>
+                  <Link
+                    to="/sign-up"
+                    className="px-5 py-2 bg-[#D6482B] text-white text-sm font-medium rounded-lg hover:bg-[#b33a22] transition-colors shadow-md hover:shadow-lg"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
+                >
+                  Logout
+                </button>
+              )}
             </div>
-          </div>
-        )}
-      </header>
 
-      {/* FOOTER */}
-      <footer className="fixed bottom-0 left-0 right-0 z-30 bg-[#f6f4f0]/95 border-t border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4 text-xs md:text-sm text-stone-500">
-          <div className="flex items-center gap-2">
-            <Link
-              to="/"
-              className="bg-white text-stone-500 p-2 text-lg rounded-sm hover:text-blue-700 transition-colors"
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg bg-[#D6482B] text-white hover:bg-[#b33a22] transition-colors"
+              aria-label="Toggle menu"
             >
-              <FaFacebook />
-            </Link>
-            <Link
-              to="/"
-              className="bg-white text-stone-500 p-2 text-lg rounded-sm hover:text-pink-500 transition-colors"
-            >
-              <RiInstagramFill />
-            </Link>
-            <Link
-              to="/contact"
-              className="font-semibold hover:text-[#d6482b] transition-colors"
-            >
-              Contact Us
-            </Link>
-          </div>
-
-          <div className="text-right leading-tight">
-            <p>&copy; PrimeBid, LLC.</p>
-            <p>
-              Designed by{" "}
-              <Link
-                to="/"
-                className="font-semibold hover:text-[#d6482b] transition-colors"
-              >
-                Saket
-              </Link>
-            </p>
+              {isOpen ? (
+                <XMarkIcon className="w-6 h-6" />
+              ) : (
+                <GiHamburgerMenu className="w-6 h-6" />
+              )}
+            </button>
           </div>
         </div>
-      </footer>
+
+        {/* Mobile Menu */}
+        <div
+          className={`lg:hidden fixed inset-x-0 top-[57px] bg-white/95 backdrop-blur-md shadow-lg transition-all duration-300 ease-in-out ${
+            isOpen
+              ? "opacity-100 visible translate-y-0"
+              : "opacity-0 invisible -translate-y-2"
+          }`}
+          style={{ maxHeight: "calc(100vh - 57px)", overflowY: "auto" }}
+        >
+          <div className="px-4 py-4 space-y-2">
+            {/* Mobile Navigation Links */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  isActive(link.path)
+                    ? "bg-[#D6482B] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <link.icon className="text-xl" />
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Mobile Profile Link */}
+            {isAuthenticated && (
+              <Link
+                to="/me"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  isActive("/me")
+                    ? "bg-[#D6482B] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <FaUserCircle className="text-xl" />
+                Profile
+              </Link>
+            )}
+
+            {/* Mobile Auctioneer Links */}
+            {isAuthenticated && user?.role === "Auctioneer" && (
+              <div className="space-y-1">
+                <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Auctioneer Menu
+                </div>
+                {auctioneerLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                      isActive(link.path)
+                        ? "bg-[#D6482B] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <link.icon className="text-xl" />
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Mobile Admin Dashboard */}
+            {isAuthenticated && user?.role === "Super Admin" && (
+              <Link
+                to="/dashboard"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                  isActive("/dashboard")
+                    ? "bg-[#D6482B] text-white"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <MdDashboard className="text-xl" />
+                Dashboard
+              </Link>
+            )}
+
+            {/* Mobile Auth Buttons */}
+            <div className="pt-4 space-y-2 border-t border-gray-200">
+              {!isAuthenticated ? (
+                <>
+                  <Link
+                    to="/login"
+                    className="block w-full px-4 py-3 text-center text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/sign-up"
+                    className="block w-full px-4 py-3 text-center text-sm font-medium bg-[#D6482B] text-white rounded-lg hover:bg-[#b33a22] transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-3 text-center text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
+
+            {/* Social Links */}
+            <div className="pt-4 flex items-center justify-center gap-4">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                <FaFacebook className="w-5 h-5" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
+              >
+                <RiInstagramFill className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer to prevent content from going under fixed header */}
+      <div className="h-16 lg:h-[72px]" />
     </>
   );
 };

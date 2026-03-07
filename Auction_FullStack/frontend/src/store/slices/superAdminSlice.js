@@ -112,7 +112,7 @@ export const getMonthlyRevenue = () => async (dispatch) => {
     );
     dispatch(
       platformadminSlice.actions.successForMonthlyRevenue(
-        response.data.totalMonthlyRevenue
+        response.data.data
       )
     );
   } catch (error) {
@@ -184,7 +184,7 @@ export const getSinglePaymentProofDetail = (id) => async (dispatch) => {
     );
     dispatch(
       platformadminSlice.actions.successForSinglePaymentProofDetail(
-        response.data.paymentProofDetail
+        response.data.data
       )
     );
   } catch (error) {

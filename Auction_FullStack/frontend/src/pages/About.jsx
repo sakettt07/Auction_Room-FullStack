@@ -14,7 +14,7 @@ const About = () => {
       id: 2,
       title: "Innovation",
       description:
-        "We continuously refine PrimeBid with modern UX, analytics, and automation to keep auctions fast and intuitive.",
+        "We continuously refine AuctionSpace with modern UX, analytics, and automation to keep auctions fast and intuitive.",
       icon: <FaBolt />,
     },
     {
@@ -39,16 +39,19 @@ const About = () => {
         {/* Hero */}
         <div className="w-full">
           <p className="text-xs font-semibold tracking-[0.25em] uppercase text-[#d6482b]/80 mb-3">
-            about primebid
+            about AuctionSpace
           </p>
           <h1 className="text-3xl md:text-5xl xl:text-6xl font-bold text-slate-900 mb-4">
             A premium auction room
-            <span className="text-[#d6482b]"> built for serious buyers and sellers.</span>
+            <span className="text-[#d6482b]">
+              {" "}
+              built for serious buyers and sellers.
+            </span>
           </h1>
           <p className="text-base md:text-lg text-slate-600 max-w-2xl">
-            PrimeBid is where transparent rules, curated listings, and modern
-            technology come together to create a marketplace you can trust and
-            enjoy every single day.
+            AuctionSpace is where transparent rules, curated listings, and
+            modern technology come together to create a marketplace you can
+            trust and enjoy every single day.
           </p>
         </div>
 
@@ -71,11 +74,11 @@ const About = () => {
               Our story
             </h2>
             <p className="text-sm md:text-base text-slate-600 leading-relaxed">
-              PrimeBid was crafted by CodeWithZeeshu with a simple belief: great
-              items and serious buyers deserve better than clunky legacy auction
-              tools. With experience across web engineering and marketplace
-              design, we built PrimeBid to feel fast, elegant, and trustworthy
-              from day one.
+              AuctionSpace was crafted by CodeWithZeeshu with a simple belief:
+              great items and serious buyers deserve better than clunky legacy
+              auction tools. With experience across web engineering and
+              marketplace design, we built AuctionSpace to feel fast, elegant,
+              and trustworthy from day one.
             </p>
           </div>
         </div>
@@ -111,17 +114,17 @@ const About = () => {
         <div className="mt-4 md:mt-8 rounded-2xl border border-dashed border-[#d6482b]/40 bg-[#fff7f2] px-5 py-4 md:px-8 md:py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="text-lg md:text-2xl font-semibold text-slate-900 mb-1">
-              Join the PrimeBid marketplace
+              Join the AuctionSpace marketplace
             </h3>
             <p className="text-sm md:text-base text-slate-600 max-w-xl">
               Whether you&rsquo;re listing your first item or chasing your next
-              collection piece, PrimeBid is designed to feel premium, fast, and
-              fair at every click.
+              collection piece, AuctionSpace is designed to feel premium, fast,
+              and fair at every click.
             </p>
           </div>
           <p className="text-sm md:text-base font-semibold text-[#d6482b]">
-            Thank you for choosing PrimeBid. We&rsquo;re excited to be part of
-            your auction journey.
+            Thank you for choosing AuctionSpace. We&rsquo;re excited to be part
+            of your auction journey.
           </p>
         </div>
       </section>
