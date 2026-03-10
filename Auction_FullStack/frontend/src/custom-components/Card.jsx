@@ -186,9 +186,15 @@ const Card = ({
         </span>
 
         {/* Additional badge for ended auctions with winner */}
-        {status === "Ended" && bids?.length > 0 && (
-          <span className="absolute top-3 right-3 bg-yellow-400 text-xs px-2 py-1 rounded-full font-medium text-yellow-900">
-            🏆 Sold
+        {status === "Ended" && (
+          <span
+            className={`absolute top-3 right-3 text-xs px-2 py-1 rounded-full font-medium ${
+              bids?.length > 0
+                ? "bg-yellow-400 text-yellow-900"
+                : "bg-red-600 text-white"
+            }`}
+          >
+            {bids?.length > 0 ? "🏆 Sold" : "Unsold"}
           </span>
         )}
       </div>

@@ -34,7 +34,6 @@ const Dashboard = () => {
   } = useSelector((state) => state.superAdmin);
   const { user, isAuthenticated } = useSelector((state) => state.user);
   const navigateTo = useNavigate();
-  console.log("this is my payment proof variablee----", paymentProofs);
 
   const [stats, setStats] = useState({
     totalProofs: 0,

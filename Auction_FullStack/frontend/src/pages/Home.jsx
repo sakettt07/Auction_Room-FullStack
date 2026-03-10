@@ -95,7 +95,7 @@ const Home = () => {
   const stats = [
     { value: "12+", label: "Active Bidders", icon: UserGroupIcon },
     { value: "40+", label: "Auctions Completed", icon: TrophyIcon },
-    { value: "₹3Lk+", label: "Total Value Traded", icon: CurrencyDollarIcon },
+    { value: "₹3L+", label: "Total Value Traded", icon: CurrencyDollarIcon },
     { value: "98%", label: "Successful Auctions", icon: SparklesIcon },
   ];
 

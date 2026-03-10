@@ -5,7 +5,7 @@ import { sendEmail } from "../utils/sendEmailFunc.js";
 import { Commission } from "../models/commission.model.js";
 
 const verifyCommission = () => {
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("0 */12 * * *", async () => {
     console.log("Running verify commission cron.");
     const approvedProofs = await Paymentproof.find({ status: "Approved" });
 

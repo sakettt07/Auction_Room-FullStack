@@ -5,9 +5,6 @@ import Spinner from "@/custom-components/Spinner";
 
 const FeaturedAuctions = () => {
   const { allAuctions = [], loading } = useSelector((state) => state.auction);
-
-  console.log("These are my features auction-----", allAuctions);
-
   if (loading) {
     return <Spinner />;
   }
@@ -31,6 +28,7 @@ const FeaturedAuctions = () => {
               title={element.title}
               imgSrc={element.itemImage?.url}
               startTime={element.startTime}
+              bids={element.bids}
               endTime={element.endTime}
               startingBid={element.startingPrice}
               currentBid={element.currentPrice}
