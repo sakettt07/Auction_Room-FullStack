@@ -76,7 +76,7 @@ const Card = ({
     ? Math.max(...bids.map((b) => b.bidAmount))
     : startingBid;
 
-  const safeImgSrc = imgSrc || "/placeholder-auction.png";
+  const safeImgSrc = imgSrc || "/placeholder_image.jpg";
   const safeTitle = title || "Auction item";
 
   // Determine the bid label based on auction status

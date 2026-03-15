@@ -134,7 +134,7 @@ const CardTwo = ({
           {/* Image Section - Smaller height */}
           <div className="relative h-32 overflow-hidden">
             <img
-              src={imgSrc || "/placeholder-image.jpg"}
+              src={imgSrc || "/placeholder_image.jpg"}
               alt={title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />

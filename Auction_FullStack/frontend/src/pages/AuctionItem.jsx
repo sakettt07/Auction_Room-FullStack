@@ -195,7 +195,7 @@ const AuctionItem = () => {
                 <img
                   ref={imageRef}
                   src={
-                    auctionDetail?.itemImage?.url || "/placeholder-auction.png"
+                    auctionDetail?.itemImage?.url || "/placeholder_image.jpg"
                   }
                   alt={auctionDetail?.title || "Auction item"}
                   className="w-full h-[400px] object-contain"
@@ -264,7 +264,7 @@ const AuctionItem = () => {
                           containerRef.current?.clientHeight - 200
                             ? cursorPosition.y - 240
                             : cursorPosition.y + 40,
-                        backgroundImage: `url(${auctionDetail?.itemImage?.url || "/placeholder-auction.png"})`,
+                        backgroundImage: `url(${auctionDetail?.itemImage?.url || "/placeholder_image.jpg"})`,
                         backgroundPosition: `${magnifierPosition.x}% ${magnifierPosition.y}%`,
                         backgroundSize: "800px 800px", // Fixed size for consistent zoom
                         backgroundRepeat: "no-repeat",
@@ -589,7 +589,7 @@ const AuctionItem = () => {
           {/* Main Image */}
           <div className="max-w-7xl max-h-[90vh] p-8">
             <img
-              src={auctionDetail?.itemImage?.url || "/placeholder-auction.png"}
+              src={auctionDetail?.itemImage?.url || "/placeholder_image.jpg"}
               alt={auctionDetail?.title}
               className="max-w-full max-h-full object-contain"
             />

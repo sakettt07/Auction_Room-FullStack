@@ -93,7 +93,7 @@ const AuctionItemDelete = () => {
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <img
-                      src={element.itemImage?.url || "/placeholder-image.jpg"}
+                      src={element.itemImage?.url || "/placeholder_image.jpg"}
                       alt={element.title}
                       className="h-12 w-12 object-cover rounded-lg border border-gray-200"
                     />

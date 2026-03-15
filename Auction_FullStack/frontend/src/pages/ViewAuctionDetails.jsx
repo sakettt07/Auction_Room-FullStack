@@ -146,7 +146,7 @@ const ViewAuctionDetails = () => {
                   <div className="w-full md:w-64 h-64 bg-gray-100 rounded-xl overflow-hidden shadow-md">
                     <img
                       src={
-                        auctionDetail.itemImage?.url || "/placeholder-image.jpg"
+                        auctionDetail.itemImage?.url || "/placeholder_image.jpg"
                       }
                       alt={auctionDetail.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
