@@ -51,7 +51,7 @@ const verifyCommission = () => {
 
         const settleDate = new Date(Date.now()).toString().substring(0, 15);
         const subject = `Your Payment has been successfully verified and settled`;
-        const message = `Dear ${user.userName},\n\nWe are pleased to inform you that your recent payment has been successfully verified and settled. Thank you for promptly providing the necessary proof of payment. Your account has been updated, and you can now proceed with your activities on our platform without any restrictions.\n\nPayment Details:\nAmount Settled: ${paymentProofSchema.amount}\nUnpaid Amount: ${updatedUserData.unpaidCommission}\nDate of Settlement: ${settleDate}\n\nBest regards,\nZeeshu Auction Team`;
+        const message = `Dear ${user.userName},\n\nWe are pleased to inform you that your recent payment has been successfully verified and settled. Thank you for promptly providing the necessary proof of payment. Your account has been updated, and you can now proceed with your activities on our platform without any restrictions.\n\nPayment Details:\nAmount Settled: ${paymentProofSchema.amount}\nUnpaid Amount: ${updatedUserData.unpaidCommission}\nDate of Settlement: ${settleDate}\n\nBest regards,\nTeam Auction Walaa`;
         sendEmail({ email: user.email, subject, message });
 
         console.log(`User ${paymentProofSchema.userId} paid commission of ${paymentProofSchema.amount}`);
