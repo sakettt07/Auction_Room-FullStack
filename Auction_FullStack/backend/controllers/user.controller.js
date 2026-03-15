@@ -113,9 +113,10 @@ const getUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
     //basically hume bas saved cookie ko clear karna h
     res.status(200).cookie("token", "", {
-        expires: new Date(Date.now()),
+        expires: new Date(0),
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: "none"
     }).json(new ApiResponse(200, {}, "User Logged out Successfully"));
 })
 const fetchLeaderBoard = asyncHandler(async (req, res) => {
