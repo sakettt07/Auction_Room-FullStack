@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 export const isAuthenticated = asyncHandler(async (req, res, next) => {
 
     try {
-        const token = req.cookies.token;
+        const token = req.cookies?.token;
         if (!token) {
             throw new ApiError("Not authenticated, please login.", 400)
         }
@@ -26,9 +26,9 @@ export const isAuthenticated = asyncHandler(async (req, res, next) => {
 
 // the below middleware basically checks whether the user is authorised to access the auciton page or not.
 
-export const checkRole=(...roles)=>{
-    return asyncHandler(async(req,res,next)=>{
-        if(!roles.includes(req.user.role)){
+export const checkRole = (...roles) => {
+    return asyncHandler(async (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
             throw new ApiError(` ${req.user.role} don't have permission to access this resource.`, 403);
         }
         next();
