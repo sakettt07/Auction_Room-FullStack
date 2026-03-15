@@ -115,13 +115,14 @@ const AuctionItem = () => {
   }, [showFullscreen]);
 
   const handleBid = () => {
+    if (!isAuthenticated) {
+      navigateTo("/login");
+      return;
+    }
+
     if (!amount) return;
 
     const numericAmount = Number(amount);
-    if (Number.isNaN(numericAmount)) {
-      alert("Please enter a valid bid amount");
-      return;
-    }
 
     if (numericAmount <= highestBid) {
       alert("Bid must be higher than the current highest bid");
@@ -133,20 +134,14 @@ const AuctionItem = () => {
 
     dispatch(placeBid(id, formData));
     dispatch(getAuctionDetail(id));
-
     setAmount("");
   };
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigateTo("/");
-      return;
-    }
-
     if (id) {
       dispatch(getAuctionDetail(id));
     }
-  }, [dispatch, navigateTo, isAuthenticated, id]);
+  }, [dispatch, id]);
 
   return (
     <section className="w-full px-5 pt-24 pb-24 flex flex-col gap-6 max-w-7xl mx-auto">
