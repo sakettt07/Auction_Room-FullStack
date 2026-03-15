@@ -13,6 +13,9 @@ It is built with **production-ready backend architecture**, **role-based
 authorization**, **automation through cron jobs**, and **email
 communication using NodeMailer**.
 
+# Try this Live 
+https://auctionspace.vercel.app
+
 ------------------------------------------------------------------------
 
 # 🚀 Project Overview
