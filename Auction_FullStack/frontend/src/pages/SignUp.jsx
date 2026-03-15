@@ -137,9 +137,7 @@ const SignUp = () => {
                   } focus:outline-none focus:ring-2 focus:ring-[#d6482b]/60`}
                 />
                 {errors.userName && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.userName}
-                  </p>
+                  <p className="text-xs text-red-500 mt-1">{errors.userName}</p>
                 )}
               </div>
               <div className="flex flex-col sm:flex-1">
@@ -189,9 +187,7 @@ const SignUp = () => {
                   } focus:outline-none focus:ring-2 focus:ring-[#d6482b]/60`}
                 />
                 {errors.address && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.address}
-                  </p>
+                  <p className="text-xs text-red-500 mt-1">{errors.address}</p>
                 )}
               </div>
             </div>
@@ -239,9 +235,7 @@ const SignUp = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.password}
-                  </p>
+                  <p className="text-xs text-red-500 mt-1">{errors.password}</p>
                 )}
               </div>
             </div>
@@ -291,34 +285,31 @@ const SignUp = () => {
                         className="text-[16px] py-2 px-3 bg-slate-50 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#d6482b]/60 sm:flex-1"
                       >
                         <option value="">Select Your Bank</option>
-                        <option value="Meezan Bank">Meezan Bank</option>
-                        <option value="UBL">UBL</option>
-                        <option value="HBL">HBL</option>
-                        <option value="Allied Bank">Allied Bank</option>
+                        <option value="HDFC Bank">HDFC Bank</option>
+                        <option value="Indian Overseas Bank">
+                          Indian Overseas Bank
+                        </option>
+                        <option value="ICICI">ICICI</option>
+                        <option value="PNB">PNB</option>
+                        <option value="SBI Bank">SBI Bank</option>
                       </select>
                       <input
                         type="text"
                         value={bankAccountNumber}
                         placeholder="IBAN / IFSC"
-                        onChange={(e) =>
-                          setBankAccountNumber(e.target.value)
-                        }
+                        onChange={(e) => setBankAccountNumber(e.target.value)}
                         className="text-[16px] py-2 px-3 bg-slate-50 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#d6482b]/60 sm:flex-1"
                       />
                       <input
                         type="text"
                         value={bankAccountName}
                         placeholder="Bank Account Username"
-                        onChange={(e) =>
-                          setBankAccountName(e.target.value)
-                        }
+                        onChange={(e) => setBankAccountName(e.target.value)}
                         className="text-[16px] py-2 px-3 bg-slate-50 rounded-md border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#d6482b]/60 sm:flex-1"
                       />
                     </div>
                     {errors.bank && (
-                      <p className="text-xs text-red-500 mt-1">
-                        {errors.bank}
-                      </p>
+                      <p className="text-xs text-red-500 mt-1">{errors.bank}</p>
                     )}
                   </div>
 

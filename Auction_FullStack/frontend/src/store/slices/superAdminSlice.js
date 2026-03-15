@@ -3,6 +3,9 @@ import { createSlice } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 import { getAllAuctionItems } from "./auctionSlice";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 const platformadminSlice = createSlice({
   name: "platformadmin",
   initialState: {
@@ -107,7 +110,7 @@ export const getMonthlyRevenue = () => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForMonthlyRevenue());
   try {
     const response = await axios.get(
-      "http://localhost:4000/api/v1/platformadmin/revenuegenerated",
+      `${API_BASE_URL}/api/v1/platformadmin/revenuegenerated`,
       { withCredentials: true }
     );
     dispatch(
@@ -125,7 +128,7 @@ export const getAllUsers = () => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForAllUsers());
   try {
     const response = await axios.get(
-      "http://localhost:4000/api/v1/platformadmin/sorteduser/getall",
+      `${API_BASE_URL}/api/v1/platformadmin/sorteduser/getall`,
       { withCredentials: true }
     );
     dispatch(
@@ -144,7 +147,7 @@ export const getAllPaymentProofs = () => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForPaymentProofs());
   try {
     const response = await axios.get(
-      "http://localhost:4000/api/v1/platformadmin/paymentproofs/getall",
+      `${API_BASE_URL}/api/v1/platformadmin/paymentproofs/getall`,
       { withCredentials: true }
     );
     dispatch(
@@ -162,7 +165,7 @@ export const deletePaymentProof = (id) => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForDeletePaymentProof());
   try {
     const response = await axios.delete(
-      `http://localhost:4000/api/v1/platformadmin/removepaymentproof/delete/${id}`,
+      `${API_BASE_URL}/api/v1/platformadmin/removepaymentproof/delete/${id}`,
       { withCredentials: true }
     );
     dispatch(platformadminSlice.actions.successForDeletePaymentProof());
@@ -179,7 +182,7 @@ export const getSinglePaymentProofDetail = (id) => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForSinglePaymentProofDetail());
   try {
     const response = await axios.get(
-      `http://localhost:4000/api/v1/platformadmin/paymentproofdetail/${id}`,
+      `${API_BASE_URL}/api/v1/platformadmin/paymentproofdetail/${id}`,
       { withCredentials: true }
     );
     dispatch(
@@ -197,7 +200,7 @@ export const updatePaymentProof = (id, status, amount) => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForUpdatePaymentProof());
   try {
     const response = await axios.put(
-      `http://localhost:4000/api/v1/platformadmin/payments/updateProofStatus/${id}`,
+      `${API_BASE_URL}/api/v1/platformadmin/payments/updateProofStatus/${id}`,
       { status, amount },
       { withCredentials: true, headers: { "Content-Type": "application/json" } }
     );
@@ -216,7 +219,7 @@ export const deleteAuctionItem = (id) => async (dispatch) => {
   dispatch(platformadminSlice.actions.requestForAuctionItemDelete());
   try {
     const response = await axios.delete(
-      `http://localhost:4000/api/v1/platformadmin/removeitem/delete/${id}`,
+      `${API_BASE_URL}/api/v1/platformadmin/removeitem/delete/${id}`,
       { withCredentials: true }
     );
     dispatch(platformadminSlice.actions.successForAuctionItemDelete());

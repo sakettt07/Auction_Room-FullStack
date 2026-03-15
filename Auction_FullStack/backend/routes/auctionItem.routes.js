@@ -8,7 +8,7 @@ const router = express.Router();
 router.route('/createauction').post(isAuthenticated, checkRole("Auctioneer"), trackCommission, addNewAuctionItem);
 router.route('/auctionitems').get(getAllItems);
 router.route('/removeItem/:id').delete(isAuthenticated, checkRole("Auctioneer"), removeItem);
-router.route('/auction/:id').get(isAuthenticated, getAuctionDetails);
+router.route('/auction/:id').get(getAuctionDetails);
 router.route('/myauction').get(isAuthenticated, checkRole("Auctioneer"), myAuctionItem);
 router.route('/republishauction/:id').put(isAuthenticated, checkRole("Auctioneer"), republishItem);
 
