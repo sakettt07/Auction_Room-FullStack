@@ -34,6 +34,13 @@ const auctionSlice = createSlice({
     getAllAuctionItemSuccess(state, action) {
       state.loading = false;
       state.allAuctions = action.payload;
+      localStorage.setItem(
+        "auctions_cache",
+        JSON.stringify({
+          data: action.payload,
+          time: Date.now(),
+        })
+      );
     },
     getAllAuctionItemFailed(state, action) {
       state.loading = false;
@@ -47,6 +54,15 @@ const auctionSlice = createSlice({
       state.loading = false;
       state.auctionDetail = action.payload.auctionItem;
       state.auctionBidders = action.payload.bidders;
+      const id = action.payload.auctionItem._id;
+
+      localStorage.setItem(
+        `auction_detail_${id}`,
+        JSON.stringify({
+          data: action.payload,
+          time: Date.now(),
+        })
+      );
     },
     getAuctionDetailFailed(state, action) {
       state.loading = false;
@@ -60,6 +76,13 @@ const auctionSlice = createSlice({
     getMyAuctionsSuccess(state, action) {
       state.loading = false;
       state.myAuctions = action.payload || [];
+      localStorage.setItem(
+        "my_auctions_cache",
+        JSON.stringify({
+          data: action.payload,
+          time: Date.now(),
+        })
+      );
     },
     getMyAuctionsFailed(state, action) {
       state.loading = false;
@@ -106,14 +129,33 @@ export const getAllAuctionItems = () => async (dispatch) => {
     dispatch(
       auctionSlice.actions.getAllAuctionItemSuccess(response.data.data)
     );
-    dispatch(auctionSlice.actions.resetSlice());
+    // dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
+    console.error(error);
+
+    // ✅ Try cache if backend fails (Render sleeping case)
+    const cached = localStorage.getItem("auctions_cache");
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+
+      // ⏳ optional expiry (5 min)
+      const isValid = Date.now() - parsed.time < 5 * 60 * 1000;
+
+      if (isValid) {
+        dispatch(
+          auctionSlice.actions.getAllAuctionItemSuccess(parsed.data)
+        );
+        return;
+      }
+    }
+
     dispatch(
       auctionSlice.actions.getAllAuctionItemFailed(
         error?.response?.data?.message
       )
     );
-    console.error(error);
+  } finally {
     dispatch(auctionSlice.actions.resetSlice());
   }
 };
@@ -127,14 +169,29 @@ export const getMyAuctionItems = () => async (dispatch) => {
     );
     // Backend wraps data in ApiResponse, use `data`
     dispatch(auctionSlice.actions.getMyAuctionsSuccess(response.data.data));
-    dispatch(auctionSlice.actions.resetSlice());
   } catch (error) {
+    console.error(error);
+    const cached = localStorage.getItem("my_auctions_cache");
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid = Date.now() - parsed.time < 5 * 60 * 1000;
+
+      if (isValid) {
+        dispatch(
+          auctionSlice.actions.getMyAuctionsSuccess(parsed.data)
+        );
+        return;
+      }
+    }
+
     dispatch(
       auctionSlice.actions.getMyAuctionsFailed(
         error?.response?.data?.message
       )
     );
-    console.error(error);
+  }
+  finally {
     dispatch(auctionSlice.actions.resetSlice());
   }
 };
@@ -146,15 +203,30 @@ export const getAuctionDetail = (id) => async (dispatch) => {
       `${API_BASE_URL}/api/v1/auctionItem/auction/${id}`,
       { withCredentials: true }
     );
-    dispatch(auctionSlice.actions.getAuctionDetailSuccess(response.data.data));
-    dispatch(auctionSlice.actions.resetSlice());
+    dispatch(
+      auctionSlice.actions.getAuctionDetailSuccess(response.data.data)
+    );
   } catch (error) {
+    console.error(error);
+    // ✅ Fallback to cache
+    const cached = localStorage.getItem(`auction_detail_${id}`);
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid = Date.now() - parsed.time < 5 * 60 * 1000;
+      if (isValid) {
+        dispatch(
+          auctionSlice.actions.getAuctionDetailSuccess(parsed.data)
+        );
+        return;
+      }
+    }
     dispatch(
       auctionSlice.actions.getAuctionDetailFailed(
         error?.response?.data?.message
       )
     );
-    console.error(error);
+  } finally {
     dispatch(auctionSlice.actions.resetSlice());
   }
 };

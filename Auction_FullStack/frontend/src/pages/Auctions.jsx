@@ -23,6 +23,16 @@ import { Dialog, Transition } from "@headlessui/react";
 
 const Auctions = () => {
   const { allAuctions = [], loading } = useSelector((state) => state.auction);
+  const [cachedAuctions, setCachedAuctions] = useState([]);
+
+  useEffect(() => {
+    const cached = localStorage.getItem("auctions_cache");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      setCachedAuctions(parsed.data || []);
+    }
+  }, []);
+  const displayAuctions = allAuctions.length > 0 ? allAuctions : cachedAuctions;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -48,12 +58,12 @@ const Auctions = () => {
     () =>
       Array.from(
         new Set(
-          (allAuctions || [])
+          (displayAuctions || [])
             .map((a) => a?.category)
             .filter((c) => typeof c === "string" && c.length > 0),
         ),
       ).sort(),
-    [allAuctions],
+    [displayAuctions],
   );
 
   const clearFilters = useCallback(() => {
@@ -87,7 +97,7 @@ const Auctions = () => {
   }, [searchTerm, selectedCategory, minPrice, maxPrice, sortBy]);
 
   const filteredAuctions = useMemo(() => {
-    let filtered = (allAuctions || []).filter((auction) => {
+    let filtered = (displayAuctions || []).filter((auction) => {
       if (!auction) return false;
 
       const title = auction.title || "";
@@ -173,7 +183,7 @@ const Auctions = () => {
 
   return (
     <>
-      {loading ? (
+      {loading && displayAuctions.length === 0 ? (
         <div className="min-h-screen flex items-center justify-center">
           <Spinner />
         </div>

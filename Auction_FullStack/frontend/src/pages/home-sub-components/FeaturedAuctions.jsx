@@ -1,13 +1,29 @@
 import Card from "@/custom-components/Card";
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Spinner from "@/custom-components/Spinner";
+import { getAllAuctionItems } from "@/store/slices/auctionSlice";
 
 const FeaturedAuctions = () => {
+  const dispatch = useDispatch();
   const { allAuctions = [], loading } = useSelector((state) => state.auction);
-  if (loading) {
-    return <Spinner />;
-  }
+
+  useEffect(() => {
+    // ✅ Load cached data instantly
+    const cached = localStorage.getItem("auctions_cache");
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+
+      dispatch({
+        type: "auction/getAllAuctionItemSuccess",
+        payload: parsed.data,
+      });
+    }
+
+    // ✅ Always fetch fresh data in background
+    dispatch(getAllAuctionItems());
+  }, [dispatch]);
 
   return (
     <section className="my-8">
@@ -15,7 +31,10 @@ const FeaturedAuctions = () => {
         Featured Auctions
       </h3>
 
-      {allAuctions.length === 0 ? (
+      {/* ✅ Show loader ONLY if no data exists */}
+      {loading && allAuctions.length === 0 ? (
+        <Spinner />
+      ) : allAuctions.length === 0 ? (
         <div className="w-full py-10 text-center text-gray-500 text-lg">
           No auctions available right now.
         </div>

@@ -61,7 +61,7 @@ const Home = () => {
 
   const sidebarCards = [
     {
-      title: "0% Platform Fee",
+      title: "8% Platform Fee only",
       text: "New sellers pay zero platform fee on their first auction.",
       icon: CurrencyDollarIcon,
       gradient: "from-emerald-500 to-teal-500",

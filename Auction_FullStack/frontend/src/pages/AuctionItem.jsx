@@ -138,9 +138,26 @@ const AuctionItem = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      dispatch(getAuctionDetail(id));
+    if (!id) return;
+
+    // ✅ Load cached data instantly
+    const cached = localStorage.getItem(`auction_detail_${id}`);
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+
+      const isValid = Date.now() - parsed.time < 5 * 60 * 1000; // 5 min
+
+      if (isValid) {
+        dispatch({
+          type: "auction/getAuctionDetailSuccess",
+          payload: parsed.data,
+        });
+      }
     }
+
+    // ✅ Always fetch fresh data in background
+    dispatch(getAuctionDetail(id));
   }, [dispatch, id]);
 
   return (
@@ -170,7 +187,7 @@ const AuctionItem = () => {
         </p>
       </div>
 
-      {loading ? (
+      {loading && !auctionDetail?._id ? (
         <Spinner />
       ) : (
         <>

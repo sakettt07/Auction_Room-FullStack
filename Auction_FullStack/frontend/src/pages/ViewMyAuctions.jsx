@@ -24,6 +24,7 @@ import {
 const ViewMyAuctions = () => {
   const { myAuctions = [], loading } = useSelector((state) => state.auction);
   const { user, isAuthenticated } = useSelector((state) => state.user);
+  const [cachedAuctions, setCachedAuctions] = useState([]);
 
   const dispatch = useDispatch();
   const navigateTo = useNavigate();
@@ -39,6 +40,19 @@ const ViewMyAuctions = () => {
     totalRevenue: 0,
     soldItems: 0,
   });
+  useEffect(() => {
+    const cached = localStorage.getItem("my_auctions_cache");
+
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid = Date.now() - parsed.time < 5 * 60 * 1000;
+
+      if (isValid) {
+        setCachedAuctions(parsed.data);
+      }
+    }
+  }, []);
+  const displayAuctions = myAuctions.length > 0 ? myAuctions : cachedAuctions;
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "Auctioneer") {
@@ -49,31 +63,33 @@ const ViewMyAuctions = () => {
   }, [dispatch, navigateTo, isAuthenticated, user]);
 
   useEffect(() => {
-    if (myAuctions.length > 0) {
+    if (displayAuctions.length > 0) {
       const now = new Date();
-      const active = myAuctions.filter(
+      const active = displayAuctions.filter(
         (a) => new Date(a.startTime) <= now && new Date(a.endTime) > now,
       ).length;
-      const ended = myAuctions.filter((a) => new Date(a.endTime) <= now).length;
-      const upcoming = myAuctions.filter(
+      const ended = displayAuctions.filter(
+        (a) => new Date(a.endTime) <= now,
+      ).length;
+      const upcoming = displayAuctions.filter(
         (a) => new Date(a.startTime) > now,
       ).length;
 
-      const totalBids = myAuctions.reduce(
+      const totalBids = displayAuctions.reduce(
         (sum, auction) => sum + (auction.bids?.length || 0),
         0,
       );
 
-      const totalRevenue = myAuctions
+      const totalRevenue = displayAuctions
         .filter((a) => new Date(a.endTime) <= now && a.currentPrice)
         .reduce((sum, auction) => sum + (auction.currentPrice || 0), 0);
 
-      const soldItems = myAuctions.filter(
+      const soldItems = displayAuctions.filter(
         (a) => new Date(a.endTime) <= now && a.bids?.length > 0,
       ).length;
 
       setStats({
-        total: myAuctions.length,
+        total: displayAuctions.length,
         active,
         ended,
         upcoming,
@@ -82,9 +98,9 @@ const ViewMyAuctions = () => {
         soldItems,
       });
     }
-  }, [myAuctions]);
+  }, [displayAuctions]);
 
-  const filteredAuctions = myAuctions.filter((auction) => {
+  const filteredAuctions = displayAuctions.filter((auction) => {
     const now = new Date();
     switch (selectedFilter) {
       case "active":
@@ -347,7 +363,7 @@ const ViewMyAuctions = () => {
         )}
 
         {/* Auctions Grid */}
-        {loading ? (
+        {loading && displayAuctions.length === 0 ? (
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
@@ -401,7 +417,8 @@ const ViewMyAuctions = () => {
         {/* Results Count */}
         {filteredAuctions.length > 0 && (
           <div className="mt-4 text-sm text-gray-500 text-center">
-            Showing {filteredAuctions.length} of {myAuctions.length} auctions
+            Showing {filteredAuctions.length} of {displayAuctions.length}{" "}
+            auctions
           </div>
         )}
       </div>
