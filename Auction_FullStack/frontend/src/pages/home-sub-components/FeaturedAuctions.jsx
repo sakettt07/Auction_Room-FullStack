@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "@/custom-components/Spinner";
 import { getAllAuctionItems } from "@/store/slices/auctionSlice";
+import AuctionCardSkeleton from "@/custom-components/AuctionCardSkeleton";
 
 const FeaturedAuctions = () => {
   const dispatch = useDispatch();
@@ -33,7 +34,11 @@ const FeaturedAuctions = () => {
 
       {/* ✅ Show loader ONLY if no data exists */}
       {loading && allAuctions.length === 0 ? (
-        <Spinner />
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <AuctionCardSkeleton key={index} />
+          ))}
+        </div>
       ) : allAuctions.length === 0 ? (
         <div className="w-full py-10 text-center text-gray-500 text-lg">
           No auctions available right now.
