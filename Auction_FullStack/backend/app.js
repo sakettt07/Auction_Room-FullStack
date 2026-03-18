@@ -35,6 +35,14 @@ app.use(fileUpload({
     tempFileDir: "/tmp/",
 }));
 
+app.get("/ping", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Server is awake 🚀",
+        time: new Date()
+    });
+});
+
 //defining all the routes
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/auctionItem", auctionItemRouter);
