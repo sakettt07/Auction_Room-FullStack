@@ -1,0 +1,23 @@
+services:
+  server:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: auction-backend
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./backend/config/config.env
+    environment:
+      - NODE_ENV=production
+  client:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: auction-frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - server

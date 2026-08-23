@@ -1,0 +1,2 @@
+node_modules
+# .env (removed so Vite can access it during build)
