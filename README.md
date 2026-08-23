@@ -76,6 +76,13 @@ marketplace platforms**, such as:
 
 ------------------------------------------------------------------------
 
+# Screenshots.
+<img width="1900" height="864" alt="Screenshot 2026-03-15 185806" src="https://github.com/user-attachments/assets/eb494e1c-4e49-4ba4-b251-80125cb8a659" />
+<img width="1891" height="865" alt="Screenshot 2026-03-15 185926" src="https://github.com/user-attachments/assets/c15a7e73-e497-4a11-9a0d-28d5107aee7b" />
+<img width="1902" height="867" alt="Screenshot 2026-03-16 105006" src="https://github.com/user-attachments/assets/303a2ea0-7931-4911-b5b1-bd54640de840" />
+<img width="1897" height="870" alt="Screenshot 2026-03-15 185841" src="https://github.com/user-attachments/assets/7a4ddab9-3564-46ed-84dc-027b3f35677b" />
+
+
 # 🏗️ Architecture Design
 
 AuctionSpace follows a **modular full‑stack architecture**.
