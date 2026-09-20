@@ -118,13 +118,18 @@ const Home = () => {
   };
 
   useEffect(() => {
+    // Prevent ScrollTrigger opacity locks on mobile screens to guarantee instantaneous loading and zero blank space
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      return;
+    }
+
     const ctx = gsap.context(() => {
       // Hero entrance
       if (heroRef.current) {
         gsap.from(heroRef.current, {
           opacity: 0,
-          y: 30,
-          duration: 0.9,
+          y: 25,
+          duration: 0.8,
           ease: "power2.out",
         });
       }
@@ -135,11 +140,11 @@ const Home = () => {
           opacity: 0,
           y: 20,
           stagger: 0.08,
-          duration: 0.6,
+          duration: 0.5,
           ease: "power2.out",
           scrollTrigger: {
             trigger: trustBarRef.current,
-            start: "top 90%",
+            start: "top 95%",
           },
         });
       }
@@ -149,12 +154,12 @@ const Home = () => {
         gsap.from(statsRef.current.children, {
           opacity: 0,
           y: 20,
-          stagger: 0.1,
-          duration: 0.6,
+          stagger: 0.08,
+          duration: 0.5,
           ease: "power2.out",
           scrollTrigger: {
             trigger: statsRef.current,
-            start: "top 85%",
+            start: "top 95%",
           },
         });
       }
@@ -163,13 +168,13 @@ const Home = () => {
       if (howItWorksRef.current?.children) {
         gsap.from(howItWorksRef.current.children, {
           opacity: 0,
-          y: 25,
-          stagger: 0.1,
-          duration: 0.6,
+          y: 20,
+          stagger: 0.08,
+          duration: 0.5,
           ease: "power2.out",
           scrollTrigger: {
             trigger: howItWorksRef.current,
-            start: "top 85%",
+            start: "top 95%",
           },
         });
       }
@@ -180,7 +185,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-50/60 via-white to-stone-50/50">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-16 flex flex-col gap-14 sm:gap-18">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-16 flex flex-col gap-8 sm:gap-14 lg:gap-18">
         
         {/* 1. HERO SECTION */}
         <section ref={heroRef} className="text-center max-w-4xl mx-auto pt-2 pb-2">
@@ -213,7 +218,7 @@ const Home = () => {
               <ArrowRightIcon className="w-5 h-5" />
             </Link>
 
-            {isAuthenticated ? (
+            {isAuthenticated && (
               user?.role === "Super Admin" ? (
                 <Link
                   to="/dashboard"
@@ -231,28 +236,23 @@ const Home = () => {
                   <RocketLaunchIcon className="w-5 h-5 text-[#D6482B]" />
                 </Link>
               )
-            ) : (
-              <Link
-                to="/sign-up"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-stone-800 bg-white border border-stone-200/90 hover:border-[#D6482B] hover:text-[#D6482B] shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                <span>Register to Bid</span>
-                <ChevronRightIcon className="w-5 h-5 text-stone-400" />
-              </Link>
             )}
           </div>
 
-          {/* Quick Metrics Trust Line */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs sm:text-sm font-semibold text-stone-500">
-            <span className="flex items-center gap-1.5">
-              <CheckCircleIcon className="w-4 h-4 text-emerald-600" /> 100% Escrow Protected
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircleIcon className="w-4 h-4 text-emerald-600" /> Real-Time Bidding Engine
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircleIcon className="w-4 h-4 text-emerald-600" /> 8% Transparent Fee
-            </span>
+          {/* Quick Metrics Trust Badges (Polished modern pill layout) */}
+          <div className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3.5 text-xs font-bold">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50/90 text-emerald-800 border border-emerald-200/80 shadow-xs">
+              <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+              <span>100% Escrow Protected</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/90 text-blue-800 border border-blue-200/80 shadow-xs">
+              <CheckCircleIcon className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+              <span>Real-Time Bidding Engine</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50/90 text-[#D6482B] border border-orange-200/80 shadow-xs">
+              <CheckCircleIcon className="w-3.5 h-3.5 text-[#D6482B] flex-shrink-0" />
+              <span>8% Transparent Fee</span>
+            </div>
           </div>
         </section>
 
@@ -261,27 +261,29 @@ const Home = () => {
           <UpcomingBannerCarousel />
         </section>
 
-        {/* 3. HORIZONTAL TRUST FEATURES BAR (Replaces the old sidebar cards) */}
+        {/* 3. HORIZONTAL TRUST FEATURES BAR (Optimized 2-col on mobile, 5-col on desktop) */}
         <section>
           <div
             ref={trustBarRef}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"
+            className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4"
           >
             {trustFeatures.map((feat, idx) => (
               <div
                 key={idx}
-                className="bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:shadow-md hover:border-orange-200 transition-all duration-300 group flex flex-col justify-between"
+                className={`bg-white rounded-2xl p-4 sm:p-5 border border-stone-200/80 shadow-xs hover:shadow-md hover:border-orange-200 transition-all duration-300 group flex flex-col justify-between ${
+                  idx === 4 ? "col-span-2 sm:col-span-1 lg:col-span-1" : ""
+                }`}
               >
                 <div>
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center border mb-3.5 ${feat.accent}`}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border mb-2.5 sm:mb-3.5 ${feat.accent}`}
                   >
                     <feat.icon className="w-5 h-5" />
                   </div>
-                  <h4 className="font-bold text-stone-900 text-sm mb-1 group-hover:text-[#D6482B] transition-colors">
+                  <h4 className="font-bold text-stone-900 text-xs sm:text-sm mb-1 group-hover:text-[#D6482B] transition-colors">
                     {feat.title}
                   </h4>
-                  <p className="text-stone-500 text-xs leading-relaxed">
+                  <p className="text-stone-500 text-[11px] sm:text-xs leading-relaxed">
                     {feat.text}
                   </p>
                 </div>
