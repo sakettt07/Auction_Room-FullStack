@@ -66,180 +66,182 @@ const SideDrawer = () => {
       label: "Commission",
       icon: FaFileInvoiceDollar,
     },
-    { path: "/create-auction", label: "Create", icon: IoIosCreate },
-    { path: "/view-my-auctions", label: "My auctions", icon: FaEye },
+    { path: "/create-auction", label: "Create Auction", icon: IoIosCreate },
+    { path: "/view-my-auctions", label: "My Auctions", icon: FaEye },
   ];
 
   return (
     <>
-      {/* Header */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/95 backdrop-blur-md shadow-md py-2"
-            : "bg-white/80 backdrop-blur-sm py-3"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center gap-2 group"
-              onClick={() => setIsOpen(false)}
-            >
-              <span className="text-xl sm:text-2xl font-bold">
-                Auction
-                <span className="text-[#D6482B] group-hover:text-[#b33a22] transition-colors">
-                  Space
-                </span>
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive(link.path)
-                      ? "bg-[#D6482B] text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
-                  }`}
-                >
-                  <link.icon className="text-lg" />
-                  {link.label}
-                </Link>
-              ))}
-
-              {/* Auctioneer Dropdown */}
-              {isAuthenticated && user?.role === "Auctioneer" && (
-                <div className="relative group">
-                  <button
-                    onClick={() => toggleDropdown("auctioneer")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      auctioneerLinks.some((link) => isActive(link.path))
-                        ? "bg-[#D6482B] text-white"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
-                    }`}
-                  >
-                    <IoIosCreate className="text-lg" />
-                    Auctioneer
-                    <ChevronDownIcon className="w-4 h-4 ml-1" />
-                  </button>
-
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-100">
-                    {auctioneerLinks.map((link) => (
-                      <Link
-                        key={link.path}
-                        to={link.path}
-                        className={`flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-50 transition-colors ${
-                          isActive(link.path)
-                            ? "text-[#D6482B] font-medium"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        <link.icon className="text-lg" />
-                        {link.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Profile Link */}
-              {isAuthenticated && (
-                <Link
-                  to="/me"
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive("/me")
-                      ? "bg-[#D6482B] text-white"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
-                  }`}
-                >
-                  <FaUserCircle className="text-lg" />
-                  Profile
-                </Link>
-              )}
-
-              {/* Admin Dashboard */}
-              {isAuthenticated && user?.role === "Super Admin" && (
-                <Link
-                  to="/dashboard"
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive("/dashboard")
-                      ? "bg-[#D6482B] text-white"
-                      : "text-gray-700 hover:bg-gray-100 hover:text-[#D6482B]"
-                  }`}
-                >
-                  <MdDashboard className="text-lg" />
-                  Dashboard
-                </Link>
-              )}
-            </nav>
-
-            {/* Desktop Auth Buttons */}
-            <div className="hidden lg:flex items-center gap-3">
-              {!isAuthenticated ? (
-                <>
-                  <Link
-                    to="/login"
-                    className="px-5 py-2 text-sm font-medium text-gray-700 hover:text-[#D6482B] transition-colors"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/sign-up"
-                    className="px-5 py-2 bg-[#D6482B] text-white text-sm font-medium rounded-lg hover:bg-[#b33a22] transition-colors shadow-md hover:shadow-lg"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              ) : (
-                <button
-                  onClick={handleLogout}
-                  className="px-5 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors shadow-md hover:shadow-lg"
-                >
-                  Logout
-                </button>
-              )}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden inline-flex items-center justify-center p-2 rounded-lg bg-[#D6482B] text-white hover:bg-[#b33a22] transition-colors"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? (
-                <XMarkIcon className="w-6 h-6" />
-              ) : (
-                <GiHamburgerMenu className="w-6 h-6" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
+      {/* Floating Modern Navbar Header */}
+      <header className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-7xl transition-all duration-300">
         <div
-          className={`lg:hidden fixed inset-x-0 top-[57px] bg-white/95 backdrop-blur-md shadow-lg transition-all duration-300 ease-in-out ${
-            isOpen
-              ? "opacity-100 visible translate-y-0"
-              : "opacity-0 invisible -translate-y-2"
+          className={`w-full rounded-full transition-all duration-300 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border ${
+            scrolled
+              ? "bg-white/95 backdrop-blur-xl border-stone-200/90 shadow-xl shadow-stone-900/10"
+              : "bg-white/85 backdrop-blur-lg border-stone-200/70 shadow-lg shadow-stone-900/5"
           }`}
-          style={{ maxHeight: "calc(100vh - 57px)", overflowY: "auto" }}
         >
-          <div className="px-4 py-4 space-y-2">
-            {/* Mobile Navigation Links */}
+          {/* Brand Logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 group flex-shrink-0"
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="text-xl sm:text-2xl font-black tracking-tight text-stone-900">
+              Auction
+              <span className="text-[#D6482B] group-hover:text-[#b33a22] transition-colors">
+                Space
+              </span>
+            </span>
+          </Link>
+
+          {/* Desktop Pill Navigation Links */}
+          <nav className="hidden lg:flex items-center space-x-1 bg-stone-100/80 p-1 rounded-full border border-stone-200/50">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
+                  isActive(link.path)
+                    ? "bg-[#D6482B] text-white shadow-sm"
+                    : "text-stone-600 hover:text-stone-950 hover:bg-white/70"
+                }`}
+              >
+                <link.icon className="text-base" />
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Auctioneer Dropdown */}
+            {isAuthenticated && user?.role === "Auctioneer" && (
+              <div className="relative group">
+                <button
+                  onClick={() => toggleDropdown("auctioneer")}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
+                    auctioneerLinks.some((link) => isActive(link.path))
+                      ? "bg-[#D6482B] text-white shadow-sm"
+                      : "text-stone-600 hover:text-stone-950 hover:bg-white/70"
+                  }`}
+                >
+                  <IoIosCreate className="text-base" />
+                  <span>Auctioneer</span>
+                  <ChevronDownIcon className="w-3.5 h-3.5 ml-0.5" />
+                </button>
+
+                <div className="absolute top-[calc(100%+8px)] right-0 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-stone-200/80 p-1.5 z-50">
+                  {auctioneerLinks.map((link) => (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
+                        isActive(link.path)
+                          ? "bg-orange-50 text-[#D6482B]"
+                          : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+                      }`}
+                    >
+                      <link.icon className="text-base text-stone-500" />
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profile Link */}
+            {isAuthenticated && (
+              <Link
+                to="/me"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
+                  isActive("/me")
+                    ? "bg-[#D6482B] text-white shadow-sm"
+                    : "text-stone-600 hover:text-stone-950 hover:bg-white/70"
+                }`}
+              >
+                <FaUserCircle className="text-base" />
+                <span>Profile</span>
+              </Link>
+            )}
+
+            {/* Admin Dashboard */}
+            {isAuthenticated && user?.role === "Super Admin" && (
+              <Link
+                to="/dashboard"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all ${
+                  isActive("/dashboard")
+                    ? "bg-[#D6482B] text-white shadow-sm"
+                    : "text-stone-600 hover:text-stone-950 hover:bg-white/70"
+                }`}
+              >
+                <MdDashboard className="text-base" />
+                <span>Dashboard</span>
+              </Link>
+            )}
+          </nav>
+
+          {/* Desktop Auth CTA */}
+          <div className="hidden lg:flex items-center gap-2">
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-xs sm:text-sm font-bold text-stone-700 hover:text-[#D6482B] transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/sign-up"
+                  className="px-5 py-2 bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 text-white text-xs sm:text-sm font-bold rounded-full transition-all shadow-md shadow-orange-500/20 hover:shadow-lg"
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-stone-500 hidden xl:inline">
+                  Hi, {user?.userName || "User"}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-stone-100 hover:bg-red-50 text-stone-700 hover:text-red-600 text-xs sm:text-sm font-bold rounded-full transition-colors border border-stone-200/80"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="lg:hidden w-10 h-10 rounded-full bg-stone-100 text-stone-800 flex items-center justify-center hover:bg-stone-200 transition-colors border border-stone-200/60"
+            aria-label="Toggle menu"
+          >
+            {isOpen ? (
+              <XMarkIcon className="w-5 h-5" />
+            ) : (
+              <GiHamburgerMenu className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile Dropdown Floating Sheet */}
+        <div
+          className={`lg:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-2xl rounded-3xl border border-stone-200/90 shadow-2xl p-4 transition-all duration-300 ease-in-out ${
+            isOpen
+              ? "opacity-100 visible translate-y-0"
+              : "opacity-0 invisible -translate-y-2 pointer-events-none"
+          }`}
+          style={{ maxHeight: "calc(100vh - 100px)", overflowY: "auto" }}
+        >
+          <div className="space-y-1.5">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
                   isActive(link.path)
                     ? "bg-[#D6482B] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    : "text-stone-700 hover:bg-stone-100"
                 }`}
               >
                 <link.icon className="text-xl" />
@@ -247,14 +249,13 @@ const SideDrawer = () => {
               </Link>
             ))}
 
-            {/* Mobile Profile Link */}
             {isAuthenticated && (
               <Link
                 to="/me"
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
                   isActive("/me")
                     ? "bg-[#D6482B] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    : "text-stone-700 hover:bg-stone-100"
                 }`}
               >
                 <FaUserCircle className="text-xl" />
@@ -262,20 +263,19 @@ const SideDrawer = () => {
               </Link>
             )}
 
-            {/* Mobile Auctioneer Links */}
             {isAuthenticated && user?.role === "Auctioneer" && (
-              <div className="space-y-1">
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Auctioneer Menu
-                </div>
+              <div className="pt-2 border-t border-stone-100 space-y-1">
+                <p className="px-4 py-1.5 text-[11px] font-bold text-stone-400 uppercase tracking-wider">
+                  Auctioneer Tools
+                </p>
                 {auctioneerLinks.map((link) => (
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
                       isActive(link.path)
                         ? "bg-[#D6482B] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "text-stone-700 hover:bg-stone-100"
                     }`}
                   >
                     <link.icon className="text-xl" />
@@ -285,14 +285,13 @@ const SideDrawer = () => {
               </div>
             )}
 
-            {/* Mobile Admin Dashboard */}
             {isAuthenticated && user?.role === "Super Admin" && (
               <Link
                 to="/dashboard"
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
                   isActive("/dashboard")
                     ? "bg-[#D6482B] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    : "text-stone-700 hover:bg-stone-100"
                 }`}
               >
                 <MdDashboard className="text-xl" />
@@ -300,58 +299,37 @@ const SideDrawer = () => {
               </Link>
             )}
 
-            {/* Mobile Auth Buttons */}
-            <div className="pt-4 space-y-2 border-t border-gray-200">
+            <div className="pt-3 space-y-2 border-t border-stone-100">
               {!isAuthenticated ? (
-                <>
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/login"
-                    className="block w-full px-4 py-3 text-center text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full py-2.5 text-center text-sm font-bold text-stone-700 border border-stone-200 rounded-full hover:bg-stone-50 transition-colors"
                   >
                     Login
                   </Link>
                   <Link
                     to="/sign-up"
-                    className="block w-full px-4 py-3 text-center text-sm font-medium bg-[#D6482B] text-white rounded-lg hover:bg-[#b33a22] transition-colors"
+                    className="w-full py-2.5 text-center text-sm font-bold bg-[#D6482B] text-white rounded-full hover:bg-[#b33a22] transition-colors shadow-sm"
                   >
                     Sign Up
                   </Link>
-                </>
+                </div>
               ) : (
                 <button
                   onClick={handleLogout}
-                  className="w-full px-4 py-3 text-center text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="w-full py-2.5 text-center text-sm font-bold bg-stone-100 text-stone-700 hover:bg-red-50 hover:text-red-600 rounded-full transition-colors border border-stone-200"
                 >
                   Logout
                 </button>
               )}
             </div>
-
-            {/* Social Links */}
-            <div className="pt-4 flex items-center justify-center gap-4">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                <FaFacebook className="w-5 h-5" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-600 hover:text-pink-600 transition-colors"
-              >
-                <RiInstagramFill className="w-5 h-5" />
-              </a>
-            </div>
           </div>
         </div>
       </header>
 
-      {/* Spacer to prevent content from going under fixed header */}
-      <div className="h-16 lg:h-[72px]" />
+      {/* Subtle spacer to position page content just right beneath the floating navbar */}
+      <div className="h-16 sm:h-20" />
     </>
   );
 };

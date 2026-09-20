@@ -87,6 +87,18 @@ const userSlice = createSlice({
       state.leaderboard = [];
       state.error = action.payload || "Failed to fetch leaderboard";
     },
+    updateProfileRequest(state, action) {
+      state.loading = true;
+      state.error = null;
+    },
+    updateProfileSuccess(state, action) {
+      state.loading = false;
+      state.user = action.payload;
+    },
+    updateProfileFailed(state, action) {
+      state.loading = false;
+      state.error = action.payload || "Failed to update profile";
+    },
     clearAllErrors(state, action) {
       state.error = null;
     },
@@ -196,6 +208,49 @@ export const fetchLeaderboard = () => async (dispatch) => {
     );
     dispatch(userSlice.actions.clearAllErrors());
     console.error(error);
+  }
+};
+
+export const updateProfile = (formData) => async (dispatch) => {
+  dispatch(userSlice.actions.updateProfileRequest());
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/v1/user/update/profile`,
+      formData,
+      {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    dispatch(userSlice.actions.updateProfileSuccess(response.data.data));
+    toast.success(response.data.message || "Profile updated successfully");
+    dispatch(userSlice.actions.clearAllErrors());
+    return true;
+  } catch (error) {
+    const message = error?.response?.data?.message || "Profile update failed";
+    dispatch(userSlice.actions.updateProfileFailed(message));
+    toast.error(message);
+    dispatch(userSlice.actions.clearAllErrors());
+    return false;
+  }
+};
+
+export const updatePassword = (passwords) => async (dispatch) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/api/v1/user/password/update`,
+      passwords,
+      {
+        withCredentials: true,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    toast.success(response.data.message || "Password updated successfully");
+    return true;
+  } catch (error) {
+    const message = error?.response?.data?.message || "Failed to update password";
+    toast.error(message);
+    return false;
   }
 };
 

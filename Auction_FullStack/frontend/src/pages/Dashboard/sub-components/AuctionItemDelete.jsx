@@ -1,138 +1,205 @@
-import { deleteAuctionItem } from "@/store/slices/superAdminSlice";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { deleteAuctionItem } from "@/store/slices/superAdminSlice";
+import { getAllAuctionItems } from "@/store/slices/auctionSlice";
 import {
   TrashIcon,
   EyeIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
+  TagIcon,
+  ClockIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 
 const AuctionItemDelete = () => {
+  const dispatch = useDispatch();
   const { allAuctions = [] } = useSelector((state) => state.auction);
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     id: null,
     title: "",
+    imageUrl: "",
+    price: 0,
   });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const dispatch = useDispatch();
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const set = new Set();
+    allAuctions.forEach((a) => {
+      if (a.category) set.add(a.category);
+    });
+    return ["All", ...Array.from(set)];
+  }, [allAuctions]);
 
-  const handleAuctionDelete = (id) => {
-    dispatch(deleteAuctionItem(id));
-    setDeleteModal({ isOpen: false, id: null, title: "" });
+  const filteredAuctions = useMemo(() => {
+    return allAuctions.filter((auction) => {
+      const matchesSearch =
+        auction.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        auction.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "All" || auction.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [allAuctions, searchTerm, selectedCategory]);
+
+  const confirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteAuctionItem(deleteModal.id));
+      setDeleteModal({ isOpen: false, id: null, title: "", imageUrl: "", price: 0 });
+      dispatch(getAllAuctionItems());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+    }
   };
-
-  const openDeleteModal = (id, title) => {
-    setDeleteModal({ isOpen: true, id, title });
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteModal({ isOpen: false, id: null, title: "" });
-  };
-
-  const filteredAuctions = allAuctions.filter((auction) =>
-    auction.title?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
 
   return (
-    <>
-      {/* Search Bar */}
-      <div className="mb-4">
-        <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+    <div className="space-y-4">
+      {/* Search & Category Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <MagnifyingGlassIcon className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search auction items..."
+            placeholder="Search catalog lot by title or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#d6482b] focus:border-transparent outline-none text-sm"
+            className="w-full pl-10 pr-9 py-2 rounded-2xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#D6482B]/20 focus:border-[#D6482B] transition placeholder:text-stone-400"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
             >
-              <XMarkIcon className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+              <XMarkIcon className="w-4 h-4" />
             </button>
           )}
         </div>
+
+        {/* Category Dropdown */}
+        {categories.length > 2 && (
+          <div className="flex items-center gap-2">
+            <TagIcon className="w-4 h-4 text-stone-400" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-semibold text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#D6482B]/20 focus:border-[#D6482B] transition cursor-pointer"
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === "All" ? "All Categories" : cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {/* Catalog Lots Table */}
+      <div className="overflow-x-auto rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-stone-50 border-b border-stone-200 text-stone-400 font-bold uppercase tracking-wider text-[10px]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Image
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Current Price
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="py-3 px-4 sm:px-6">Lot Item</th>
+              <th className="py-3 px-4">Category</th>
+              <th className="py-3 px-4">Current Price</th>
+              <th className="py-3 px-4">Timeline</th>
+              <th className="py-3 px-4 text-right pr-6">Moderation Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-stone-100">
             {filteredAuctions.length > 0 ? (
               filteredAuctions.map((element) => (
                 <tr
                   key={element._id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-stone-50/70 transition-colors group"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <img
-                      src={element.itemImage?.url || "/placeholder_image.jpg"}
-                      alt={element.title}
-                      className="h-12 w-12 object-cover rounded-lg border border-gray-200"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {element.title}
+                  {/* Thumbnail & Title */}
+                  <td className="py-3.5 px-4 sm:px-6">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={element.itemImage?.url || "/placeholder_image.jpg"}
+                        alt={element.title}
+                        className="w-12 h-12 rounded-xl object-cover border border-stone-200 flex-shrink-0"
+                      />
+                      <div className="min-w-0 max-w-xs">
+                        <p className="font-bold text-stone-900 truncate group-hover:text-[#D6482B] transition-colors">
+                          {element.title}
+                        </p>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                          ID: {element._id.slice(-6)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      ID: {element._id.slice(-6)}
-                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-700">
+
+                  {/* Category & Condition */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-orange-50 text-[#D6482B] border border-orange-200/60">
                       {element.category || "Uncategorized"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-semibold text-green-600">
+
+                  {/* Price */}
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="font-black text-stone-900 text-sm">
                       ₹
-                      {element.currentPrice?.toLocaleString() ||
-                        element.startingPrice?.toLocaleString()}
+                      {Number(
+                        element.currentPrice || element.startingPrice || 0
+                      ).toLocaleString("en-IN")}
                     </span>
+                    <p className="text-[10px] text-stone-400">
+                      Reserve: ₹
+                      {Number(element.startingPrice || 0).toLocaleString("en-IN")}
+                    </p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
+
+                  {/* Timeline */}
+                  <td className="py-3.5 px-4 whitespace-nowrap text-[11px] text-stone-500">
+                    <div className="flex items-center gap-1">
+                      <ClockIcon className="w-3.5 h-3.5 text-stone-400" />
+                      <span>
+                        {element.endTime
+                          ? new Date(element.endTime).toLocaleDateString("en-IN")
+                          : "Scheduled"}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Action Buttons */}
+                  <td className="py-3.5 px-4 text-right pr-6 whitespace-nowrap">
+                    <div className="inline-flex items-center gap-1.5">
                       <Link
-                        to={`/auction/details/${element._id}`}
-                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                        title="View Details"
+                        to={`/auction/item/${element._id}`}
+                        className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition"
+                        title="View live room"
                       >
                         <EyeIcon className="w-4 h-4" />
                       </Link>
+
                       <button
-                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                        type="button"
                         onClick={() =>
-                          openDeleteModal(element._id, element.title)
+                          setDeleteModal({
+                            isOpen: true,
+                            id: element._id,
+                            title: element.title,
+                            imageUrl: element.itemImage?.url || "",
+                            price: element.currentPrice || element.startingPrice || 0,
+                          })
                         }
-                        title="Delete Auction"
+                        className="p-2 rounded-xl bg-stone-50 hover:bg-red-50 text-stone-400 hover:text-red-600 transition cursor-pointer"
+                        title="Delete from catalogue"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -142,25 +209,8 @@ const AuctionItemDelete = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center justify-center">
-                    <img
-                      src="/no-data.svg"
-                      alt="No auctions"
-                      className="w-24 h-24 mb-3 opacity-50"
-                    />
-                    <p className="text-gray-500 text-sm">
-                      No auction items found
-                    </p>
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm("")}
-                        className="mt-2 text-[#d6482b] text-sm hover:underline"
-                      >
-                        Clear search
-                      </button>
-                    )}
-                  </div>
+                <td colSpan={5} className="py-12 text-center text-stone-400 text-xs">
+                  No auction lots match your moderation search query.
                 </td>
               </tr>
             )}
@@ -170,57 +220,65 @@ const AuctionItemDelete = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 animate-fadeIn">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                <ExclamationTriangleIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-stone-900">
+                  Purge Auction Listing?
+                </h3>
+                <p className="text-xs text-stone-500">
+                  This auction and all associated bid history will be permanently deleted.
+                </p>
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-              Delete Auction Item
-            </h3>
+            {/* Thumbnail Preview */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200/80 my-4 flex items-center gap-3 text-xs">
+              <img
+                src={deleteModal.imageUrl || "/placeholder_image.jpg"}
+                alt={deleteModal.title}
+                className="w-12 h-12 rounded-xl object-cover border border-stone-200"
+              />
+              <div className="min-w-0">
+                <p className="font-bold text-stone-900 truncate">{deleteModal.title}</p>
+                <p className="text-stone-400 mt-0.5">
+                  Valuation: ₹{Number(deleteModal.price).toLocaleString("en-IN")}
+                </p>
+              </div>
+            </div>
 
-            <p className="text-gray-600 text-center mb-6">
-              Are you sure you want to delete "{deleteModal.title}"? This action
-              cannot be undone.
+            <p className="text-xs text-stone-500 leading-relaxed">
+              Are you sure you want to delete this listing from the platform? This action cannot be reverted.
             </p>
 
-            <div className="flex gap-3">
+            <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-stone-100 mt-4">
               <button
-                onClick={() => handleAuctionDelete(deleteModal.id)}
-                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-medium hover:bg-red-700 transition-colors"
-              >
-                Yes, Delete
-              </button>
-              <button
-                onClick={closeDeleteModal}
-                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                type="button"
+                onClick={() =>
+                  setDeleteModal({ isOpen: false, id: null, title: "", imageUrl: "", price: 0 })
+                }
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition cursor-pointer"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md transition cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? "Purging..." : "Yes, Purge Listing"}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.2s ease-out;
-        }
-      `}</style>
-    </>
+    </div>
   );
 };
 

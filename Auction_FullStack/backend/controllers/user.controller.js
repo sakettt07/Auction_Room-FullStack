@@ -124,4 +124,88 @@ const fetchLeaderBoard = asyncHandler(async (req, res) => {
     const leaderBoard = users.sort((a, b) => b.moneySpent - a.moneySpent).slice(0, 10);
     res.status(200).json(new ApiResponse(200, leaderBoard, "Leaderboard fetched"));
 })
-export { registerUser, loginUser, getUser, logoutUser, fetchLeaderBoard }
+
+const updateProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        throw new ApiError("User not found.", 404);
+    }
+
+    // Handle Profile Image Upload
+    if (req.files && req.files.profileImage) {
+        const { profileImage } = req.files;
+        const allowedFormats = ["image/png", "image/jpeg", "image/webp", "image/jpg", "image/avif"];
+        if (!allowedFormats.includes(profileImage.mimetype)) {
+            throw new ApiError("Invalid image format. Only PNG, JPEG, WEBP, JPG, and AVIF are allowed.", 400);
+        }
+
+        // Delete old image from Cloudinary if it exists
+        if (user.profileImage?.public_id) {
+            try {
+                await cloudinary.uploader.destroy(user.profileImage.public_id);
+            } catch (err) {
+                console.error("Failed to delete previous image from Cloudinary:", err);
+            }
+        }
+
+        // Upload new image to Cloudinary
+        const cloudinaryResponse = await cloudinary.uploader.upload(
+            profileImage.tempFilePath,
+            {
+                folder: "AuctionUsers",
+            }
+        );
+
+        if (!cloudinaryResponse || cloudinaryResponse.error) {
+            throw new ApiError(`Failed to upload profile image to Cloudinary. ${cloudinaryResponse?.error || ''}`, 500);
+        }
+
+        user.profileImage = {
+            public_id: cloudinaryResponse.public_id,
+            url: cloudinaryResponse.secure_url,
+        };
+    }
+
+    // Optionally update other details if present in req.body
+    const { userName, phone, address } = req.body;
+    if (userName && userName.trim().length >= 3) {
+        user.userName = userName.trim();
+    }
+    if (phone && phone.trim().length === 10) {
+        user.phone = phone.trim();
+    }
+    if (address && address.trim().length > 0) {
+        user.address = address.trim();
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json(new ApiResponse(200, user, "Profile updated successfully"));
+});
+
+const updatePassword = asyncHandler(async (req, res) => {
+    const { newPassword, confirmPassword } = req.body;
+    if (!newPassword || !confirmPassword) {
+        throw new ApiError("Please provide both new password and confirm password.", 400);
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        throw new ApiError("User not found.", 404);
+    }
+
+    if (newPassword !== confirmPassword) {
+        throw new ApiError("New password and confirm password do not match.", 400);
+    }
+
+    if (newPassword.length < 8) {
+        throw new ApiError("New password must be at least 8 characters long.", 400);
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"));
+});
+
+export { registerUser, loginUser, getUser, logoutUser, fetchLeaderBoard, updateProfile, updatePassword }
