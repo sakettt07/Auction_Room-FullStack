@@ -13,6 +13,8 @@ import PaymentGraph from "./sub-components/PaymentGraph";
 import BiddersAuctioneersGraph from "./sub-components/BiddersAuctioneersGraph";
 import PaymentProofs from "./sub-components/PaymentProofs";
 import AuctionItemDelete from "./sub-components/AuctionItemDelete";
+import BannerManager from "./sub-components/BannerManager";
+import { fetchAllBanners } from "@/store/slices/bannerSlice";
 
 import {
   Chart as ChartJS,
@@ -39,6 +41,7 @@ import {
   XCircleIcon,
   ClockIcon,
   ShieldExclamationIcon,
+  FireIcon,
 } from "@heroicons/react/24/outline";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -55,9 +58,10 @@ const Dashboard = () => {
     monthlyRevenue = [],
   } = useSelector((state) => state.superAdmin);
   const { allAuctions = [] } = useSelector((state) => state.auction);
+  const { allBanners = [] } = useSelector((state) => state.banner);
   const { user, isAuthenticated } = useSelector((state) => state.user);
 
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'settlements', 'moderation'
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview', 'settlements', 'moderation', 'banners'
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Authentication & Super Admin protection
@@ -77,6 +81,7 @@ const Dashboard = () => {
     dispatch(getAllUsers());
     dispatch(getAllPaymentProofs());
     dispatch(getAllAuctionItems());
+    dispatch(fetchAllBanners());
     dispatch(clearAllplatformadminSliceErrors());
   }, [dispatch]);
 
@@ -87,6 +92,7 @@ const Dashboard = () => {
       dispatch(getAllUsers()),
       dispatch(getAllPaymentProofs()),
       dispatch(getAllAuctionItems()),
+      dispatch(fetchAllBanners()),
     ]);
     setTimeout(() => setIsRefreshing(false), 500);
   };
@@ -347,11 +353,10 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-              activeTab === "overview"
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${activeTab === "overview"
                 ? "bg-stone-900 text-white shadow-sm"
                 : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
-            }`}
+              }`}
           >
             <Squares2X2Icon className="w-4 h-4" />
             <span>Analytics & Intelligence</span>
@@ -360,11 +365,10 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => setActiveTab("settlements")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-              activeTab === "settlements"
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${activeTab === "settlements"
                 ? "bg-stone-900 text-white shadow-sm"
                 : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
-            }`}
+              }`}
           >
             <DocumentCheckIcon className="w-4 h-4" />
             <span>Settlement Proofs</span>
@@ -378,16 +382,30 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => setActiveTab("moderation")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-              activeTab === "moderation"
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${activeTab === "moderation"
                 ? "bg-stone-900 text-white shadow-sm"
                 : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
-            }`}
+              }`}
           >
             <TrashIcon className="w-4 h-4" />
             <span>Catalog Moderation</span>
             <span className="px-2 py-0.2 rounded-full text-[10px] bg-stone-100 text-stone-600 font-bold">
               {stats.totalAuctionsCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("banners")}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition cursor-pointer whitespace-nowrap ${activeTab === "banners"
+                ? "bg-stone-900 text-white shadow-sm"
+                : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
+              }`}
+          >
+            <FireIcon className="w-4 h-4 text-orange-500" />
+            <span>Hero & Hot Banners</span>
+            <span className="px-2 py-0.2 rounded-full text-[10px] bg-orange-100 text-[#D6482B] font-bold">
+              {allBanners.filter((b) => b.isActive).length}
             </span>
           </button>
         </div>
@@ -534,6 +552,9 @@ const Dashboard = () => {
             <AuctionItemDelete />
           </div>
         )}
+
+        {/* Tab 4: Spotlight & Hot Banners */}
+        {activeTab === "banners" && <BannerManager />}
       </div>
     </div>
   );

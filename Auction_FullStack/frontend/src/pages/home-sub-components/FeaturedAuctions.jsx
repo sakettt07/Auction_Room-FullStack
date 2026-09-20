@@ -15,6 +15,7 @@ import {
 const FeaturedAuctions = () => {
   const dispatch = useDispatch();
   const { allAuctions = [], loading } = useSelector((state) => state.auction);
+  const { user } = useSelector((state) => state.user);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'live', 'upcoming'
 
@@ -203,12 +204,14 @@ const FeaturedAuctions = () => {
             >
               Reset Filters
             </button>
-            <Link
-              to="/create-auction"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#D6482B] text-white hover:bg-[#b33a22] transition shadow-sm"
-            >
-              Post First Auction
-            </Link>
+            {user?.role !== "Super Admin" && (
+              <Link
+                to="/create-auction"
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#D6482B] text-white hover:bg-[#b33a22] transition shadow-sm"
+              >
+                Post First Auction
+              </Link>
+            )}
           </div>
         </div>
       ) : (

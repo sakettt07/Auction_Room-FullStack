@@ -33,6 +33,7 @@ import {
 const Auctions = () => {
   const dispatch = useDispatch();
   const { allAuctions = [], loading } = useSelector((state) => state.auction);
+  const { user } = useSelector((state) => state.user);
   const [cachedAuctions, setCachedAuctions] = useState([]);
 
   // Filter & Search States
@@ -652,12 +653,14 @@ const Auctions = () => {
                 >
                   Clear All Filters
                 </button>
-                <Link
-                  to="/create-auction"
-                  className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[#D6482B] text-white hover:bg-[#b33a22] shadow-sm transition"
-                >
-                  List An Auction
-                </Link>
+                {user?.role !== "Super Admin" && (
+                  <Link
+                    to="/create-auction"
+                    className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-[#D6482B] text-white hover:bg-[#b33a22] shadow-sm transition"
+                  >
+                    List An Auction
+                  </Link>
+                )}
               </div>
             </div>
           ) : viewMode === "grid" ? (

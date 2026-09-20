@@ -10,6 +10,7 @@ import auctionItemRouter from "./routes/auctionItem.routes.js";
 import bidRouter from "./routes/bid.routes.js";
 import commissionRouter from "./routes/commission.routes.js";
 import adminRouter from "./routes/platformAdmin.routes.js";
+import bannerRouter from "./routes/banner.routes.js";
 import { auctionEnded } from "./auto/auctionEndedCron.js";
 import { verifyCommission } from "./auto/verifyCommissionCron.js"
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api/v1/auctionItem", auctionItemRouter);
 app.use("/api/v1/bid", bidRouter);
 app.use("/api/v1/commission", commissionRouter);
 app.use("/api/v1/platformadmin", adminRouter);
+app.use("/api/v1/banner", bannerRouter);
 
 auctionEnded();
 verifyCommission();

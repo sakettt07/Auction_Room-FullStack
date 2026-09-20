@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { fetchActiveBanners } from "@/store/slices/bannerSlice";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -9,6 +10,7 @@ import {
   TagIcon,
   FireIcon,
   ArrowRightIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 
 const FALLBACK_BANNERS = [
@@ -60,11 +62,20 @@ const FALLBACK_BANNERS = [
 ];
 
 const UpcomingBannerCarousel = () => {
+  const dispatch = useDispatch();
   const { allAuctions = [] } = useSelector((state) => state.auction);
+  const { activeBanners = [] } = useSelector((state) => state.banner);
+  const { user } = useSelector((state) => state.user);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [now, setNow] = useState(new Date());
   const timerRef = useRef(null);
+
+  // Fetch dynamic active banners on mount
+  useEffect(() => {
+    dispatch(fetchActiveBanners());
+  }, [dispatch]);
 
   // Update clock every second for live countdown
   useEffect(() => {
@@ -77,14 +88,28 @@ const UpcomingBannerCarousel = () => {
     .filter((a) => a.startTime && new Date(a.startTime) > now)
     .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
-  // Merge real upcoming auctions with curated fallback banners to ensure at least 3 slides
-  const slides = [
+  // Merge Super Admin dynamic banners, real upcoming auctions, and curated fallbacks
+  const dynamicBanners = (activeBanners || []).map((b) => ({
+    ...b,
+    isDynamic: true,
+  }));
+
+  const combinedSlides = [
+    ...dynamicBanners,
     ...upcomingRealAuctions.map((item) => ({
       ...item,
       badge: "Upcoming Live Drop",
     })),
     ...FALLBACK_BANNERS,
-  ].slice(0, 5);
+  ];
+
+  // De-duplicate by ID and limit to 6 slides max
+  const seenIds = new Set();
+  const slides = combinedSlides.filter((slide) => {
+    if (!slide._id || seenIds.has(slide._id)) return false;
+    seenIds.add(slide._id);
+    return true;
+  }).slice(0, 6);
 
   const totalSlides = slides.length;
 
@@ -131,7 +156,7 @@ const UpcomingBannerCarousel = () => {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Top Banner Tag */}
-      <div className="absolute top-4 left-6 z-20 flex items-center gap-2">
+      <div className="absolute top-4 left-6 z-20 flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/90 text-[#D6482B] shadow-sm backdrop-blur-md border border-[#D6482B]/20">
           <SparklesIcon className="w-3.5 h-3.5 text-[#D6482B]" />
           {currentSlide.badge || "Upcoming Auction"}
@@ -140,6 +165,17 @@ const UpcomingBannerCarousel = () => {
           <ClockIcon className="w-3.5 h-3.5 text-amber-300" />
           Auto-updates every 3s
         </span>
+
+        {user?.role === "Super Admin" && (
+          <Link
+            to="/dashboard"
+            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#D6482B] hover:bg-[#b33a22] text-white backdrop-blur-md shadow-sm transition"
+            title="Manage dynamic banners in Admin Dashboard"
+          >
+            <FireIcon className="w-3 h-3" />
+            <span>Manage Banners</span>
+          </Link>
+        )}
       </div>
 
       {/* Slide Container */}
@@ -223,12 +259,25 @@ const UpcomingBannerCarousel = () => {
 
             {/* Action CTA Button */}
             <div className="flex-1 min-w-[140px]">
-              {currentSlide.isCurated ? (
+              {currentSlide.isDynamic ? (
+                <Link
+                  to={
+                    currentSlide.ctaLink ||
+                    (currentSlide.auctionItem?._id
+                      ? `/auction/item/${currentSlide.auctionItem._id}`
+                      : "/auctions")
+                  }
+                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
+                >
+                  <span>{currentSlide.ctaText || "Explore Upcoming"}</span>
+                  <ArrowRightIcon className="w-4 h-4" />
+                </Link>
+              ) : currentSlide.isCurated ? (
                 <Link
                   to="/auctions"
                   className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
                 >
-                  Explore Upcoming
+                  <span>Explore Upcoming</span>
                   <ArrowRightIcon className="w-4 h-4" />
                 </Link>
               ) : (
@@ -236,7 +285,7 @@ const UpcomingBannerCarousel = () => {
                   to={`/auction/item/${currentSlide._id}`}
                   className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
                 >
-                  View Details
+                  <span>View Details</span>
                   <ArrowRightIcon className="w-4 h-4" />
                 </Link>
               )}

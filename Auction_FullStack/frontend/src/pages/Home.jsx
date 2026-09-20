@@ -214,13 +214,23 @@ const Home = () => {
             </Link>
 
             {isAuthenticated ? (
-              <Link
-                to="/create-auction"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-stone-800 bg-white border border-stone-200/90 hover:border-[#D6482B] hover:text-[#D6482B] shadow-sm hover:shadow-md transition-all duration-300"
-              >
-                <span>Post An Auction</span>
-                <RocketLaunchIcon className="w-5 h-5 text-[#D6482B]" />
-              </Link>
+              user?.role === "Super Admin" ? (
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-stone-800 bg-white border border-stone-200/90 hover:border-[#D6482B] hover:text-[#D6482B] shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <span>Admin Dashboard</span>
+                  <RocketLaunchIcon className="w-5 h-5 text-[#D6482B]" />
+                </Link>
+              ) : (
+                <Link
+                  to="/create-auction"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-stone-800 bg-white border border-stone-200/90 hover:border-[#D6482B] hover:text-[#D6482B] shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <span>Post An Auction</span>
+                  <RocketLaunchIcon className="w-5 h-5 text-[#D6482B]" />
+                </Link>
+              )
             ) : (
               <Link
                 to="/sign-up"
@@ -383,12 +393,21 @@ const Home = () => {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <Link
-                  to="/create-auction"
-                  className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 text-white shadow-lg transition-all"
-                >
-                  List An Auction Today
-                </Link>
+                {user?.role === "Super Admin" ? (
+                  <Link
+                    to="/dashboard"
+                    className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 text-white shadow-lg transition-all"
+                  >
+                    Open Admin Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    to="/create-auction"
+                    className="px-8 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 text-white shadow-lg transition-all"
+                  >
+                    List An Auction Today
+                  </Link>
+                )}
                 <Link
                   to="/how-it-works-info"
                   className="px-6 py-3.5 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-all"
