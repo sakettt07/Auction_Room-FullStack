@@ -24,9 +24,23 @@ const bannerSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Starting or featured price is required."],
     },
+    currentBid: {
+      type: Number,
+    },
+    totalBids: {
+      type: Number,
+      default: 0,
+    },
+    winnerName: {
+      type: String,
+      trim: true,
+    },
+    winningPrice: {
+      type: Number,
+    },
     bannerType: {
       type: String,
-      enum: ["Upcoming", "Live Hot", "Exclusive"],
+      enum: ["Upcoming", "Live Hot", "Exclusive", "Completed"],
       default: "Upcoming",
     },
     badge: {

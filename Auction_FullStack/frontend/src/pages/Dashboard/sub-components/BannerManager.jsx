@@ -26,12 +26,15 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
+  TrophyIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 
 const BADGE_PRESETS = [
   "SUPER ADMIN EXCLUSIVE",
   "HOT LIVE AUCTION",
   "UPCOMING GALA DROP",
+  "AUCTION CONCLUDED • WINNER SPOTLIGHT",
   "RARE COLLECTOR SPOTLIGHT",
   "FEATURED MASTERPIECE",
 ];
@@ -57,6 +60,7 @@ const BannerManager = () => {
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState("All");
+  const [catalogStatusFilter, setCatalogStatusFilter] = useState("All"); // 'All' | 'Live' | 'Upcoming' | 'Completed'
 
   const [filterStatus, setFilterStatus] = useState("all"); // 'all' | 'active' | 'inactive'
   const [deleteModalId, setDeleteModalId] = useState(null);
@@ -68,6 +72,10 @@ const BannerManager = () => {
     category: "Watches & Luxury",
     condition: "Mint Condition",
     startingPrice: "",
+    currentBid: "",
+    totalBids: "",
+    winnerName: "",
+    winningPrice: "",
     bannerType: "Upcoming",
     badge: "SUPER ADMIN EXCLUSIVE",
     startTime: "",
@@ -112,7 +120,7 @@ const BannerManager = () => {
     ...Array.from(new Set(allAuctions.map((a) => a.category).filter(Boolean))),
   ];
 
-  // Filter catalog lots
+  // Filter catalog lots with search, category, and lot status
   const filteredCatalogAuctions = allAuctions.filter((auction) => {
     const matchesSearch =
       !catalogSearch ||
@@ -121,7 +129,21 @@ const BannerManager = () => {
     const matchesCategory =
       catalogCategoryFilter === "All" ||
       auction.category === catalogCategoryFilter;
-    return matchesSearch && matchesCategory;
+
+    const isCompleted =
+      auction.endTime && new Date(auction.endTime) <= new Date();
+    const isLive =
+      !isCompleted &&
+      auction.startTime &&
+      new Date(auction.startTime) <= new Date();
+    const isUpcoming = !isCompleted && !isLive;
+
+    let matchesStatus = true;
+    if (catalogStatusFilter === "Live") matchesStatus = isLive;
+    if (catalogStatusFilter === "Upcoming") matchesStatus = isUpcoming;
+    if (catalogStatusFilter === "Completed") matchesStatus = isCompleted;
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Handle image file selection
@@ -147,27 +169,55 @@ const BannerManager = () => {
     const auction = allAuctions.find((a) => a._id === auctionId);
     if (!auction) return;
 
+    const now = new Date();
+    const isCompleted = auction.endTime && new Date(auction.endTime) <= now;
     const isLive =
-      new Date(auction.startTime) <= new Date() &&
-      new Date(auction.endTime) > new Date();
+      !isCompleted &&
+      auction.startTime &&
+      new Date(auction.startTime) <= now &&
+      (!auction.endTime || new Date(auction.endTime) > now);
+
+    const winner =
+      auction.highestBidder?.userName ||
+      (auction.bids && auction.bids.length > 0
+        ? auction.bids[auction.bids.length - 1]?.userName
+        : "");
+
+    const startingBid = auction.startingPrice || 0;
+    const currentBidVal = auction.currentPrice || startingBid;
+    const bidsCount = auction.bids?.length || 0;
 
     setFormData({
       title: auction.title || "",
       description:
         auction.description ||
-        "Authenticated rare collector piece ready for global live bidding.",
+        (isCompleted
+          ? "Authenticated collector masterpiece successfully auctioned and acquired."
+          : "Authenticated rare collector piece ready for global live bidding."),
       category: auction.category || "Watches & Luxury",
       condition: auction.condition || "Mint Condition",
-      startingPrice: String(auction.startingPrice || auction.currentPrice || ""),
-      bannerType: isLive ? "Live Hot" : "Upcoming",
-      badge: isLive ? "HOT LIVE AUCTION" : "UPCOMING GALA DROP",
+      startingPrice: String(startingBid),
+      currentBid: String(currentBidVal),
+      totalBids: String(bidsCount),
+      winnerName: isCompleted ? winner : "",
+      winningPrice: isCompleted ? String(currentBidVal) : "",
+      bannerType: isCompleted ? "Completed" : isLive ? "Live Hot" : "Upcoming",
+      badge: isCompleted
+        ? "AUCTION CONCLUDED • WINNER SPOTLIGHT"
+        : isLive
+        ? "HOT LIVE AUCTION"
+        : "UPCOMING GALA DROP",
       startTime: auction.startTime
         ? new Date(auction.startTime).toISOString().slice(0, 16)
         : "",
       endTime: auction.endTime
         ? new Date(auction.endTime).toISOString().slice(0, 16)
         : "",
-      ctaText: isLive ? "Bid Live Now" : "Explore Upcoming",
+      ctaText: isCompleted
+        ? "View Concluded Lot"
+        : isLive
+        ? "Bid Live Now"
+        : "Explore Upcoming",
       ctaLink: `/auction/item/${auction._id}`,
     });
 
@@ -191,6 +241,10 @@ const BannerManager = () => {
       category: "Watches & Luxury",
       condition: "Mint Condition",
       startingPrice: "",
+      currentBid: "",
+      totalBids: "",
+      winnerName: "",
+      winningPrice: "",
       bannerType: "Upcoming",
       badge: "SUPER ADMIN EXCLUSIVE",
       startTime: "",
@@ -203,6 +257,7 @@ const BannerManager = () => {
     setSelectedCatalogId("");
     setCatalogSearch("");
     setCatalogCategoryFilter("All");
+    setCatalogStatusFilter("All");
   };
 
   // Preset time helpers
@@ -252,6 +307,19 @@ const BannerManager = () => {
     payload.append("ctaText", formData.ctaText.trim() || "Explore Upcoming");
     payload.append("ctaLink", formData.ctaLink.trim() || "/auctions");
 
+    if (formData.currentBid) {
+      payload.append("currentBid", formData.currentBid);
+    }
+    if (formData.totalBids !== "") {
+      payload.append("totalBids", formData.totalBids);
+    }
+    if (formData.winnerName) {
+      payload.append("winnerName", formData.winnerName.trim());
+    }
+    if (formData.winningPrice) {
+      payload.append("winningPrice", formData.winningPrice);
+    }
+
     if (imageFile) {
       payload.append("itemImage", imageFile);
     } else if (imagePreview) {
@@ -289,14 +357,14 @@ const BannerManager = () => {
             Spotlight & Hot Auction Banners
           </h2>
           <p className="text-stone-500 text-sm mt-1 max-w-2xl leading-relaxed">
-            Curate and schedule high-heat carousel drops displayed prominently on the Home page hero. Control live countdowns, custom badges, and lot showcases in real-time.
+            Curate and schedule high-heat carousel drops displayed prominently on the Home page hero. Control live countdowns, active bids, and concluded winner showcases in real-time.
           </p>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => dispatch(fetchAllBanners())}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold transition cursor-pointer"
             title="Refresh banner inventory"
           >
             <ArrowPathIcon className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -332,7 +400,7 @@ const BannerManager = () => {
                     </h3>
                   </div>
                   <p className="text-xs text-stone-500 mt-1">
-                    Configure spotlight drop details. Changes are pushed live to the Home page hero carousel immediately.
+                    Spotlight upcoming drops, hot live auctions with real-time bidding, or concluded auctions celebrating the winner.
                   </p>
                 </div>
                 <button
@@ -390,7 +458,7 @@ const BannerManager = () => {
                               Choose An Auction Lot to Spotlight
                             </h4>
                             <p className="text-[11px] text-stone-500">
-                              Click any lot to automatically populate the banner, schedule, and image.
+                              Auto-populates photos, timing, active bids, or winner details.
                             </p>
                           </div>
                         </div>
@@ -410,6 +478,7 @@ const BannerManager = () => {
                       {selectedCatalogId ? (
                         (() => {
                           const selectedAuction = allAuctions.find((a) => a._id === selectedCatalogId);
+                          const isFinished = selectedAuction?.endTime && new Date(selectedAuction.endTime) <= new Date();
                           return (
                             <div className="bg-white rounded-2xl p-3.5 border-2 border-[#D6482B] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <div className="flex items-center gap-3 min-w-0">
@@ -425,6 +494,15 @@ const BannerManager = () => {
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
                                       ✓ Selected Lot
                                     </span>
+                                    {isFinished ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900">
+                                        Concluded / Won
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700">
+                                        Active
+                                      </span>
+                                    )}
                                     <span className="text-[10px] text-stone-500 font-semibold">
                                       {selectedAuction?.category}
                                     </span>
@@ -433,7 +511,7 @@ const BannerManager = () => {
                                     {selectedAuction?.title}
                                   </h5>
                                   <p className="text-xs font-black text-[#D6482B]">
-                                    Starting Bid: ₹{Number(selectedAuction?.startingPrice || selectedAuction?.currentPrice || 0).toLocaleString("en-IN")}
+                                    {isFinished ? "Winning Hammer Price" : "Current Bid"}: ₹{Number(selectedAuction?.currentPrice || selectedAuction?.startingPrice || 0).toLocaleString("en-IN")}
                                   </p>
                                 </div>
                               </div>
@@ -450,6 +528,29 @@ const BannerManager = () => {
                         })()
                       ) : (
                         <div className="space-y-3 pt-1">
+                          {/* Status Filter Tabs */}
+                          <div className="flex items-center gap-1.5 border-b border-orange-200/60 pb-2">
+                            {[
+                              { key: "All", label: "All Lots" },
+                              { key: "Live", label: "Live Bidding" },
+                              { key: "Upcoming", label: "Upcoming" },
+                              { key: "Completed", label: "Completed / Won" },
+                            ].map((tab) => (
+                              <button
+                                type="button"
+                                key={tab.key}
+                                onClick={() => setCatalogStatusFilter(tab.key)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                                  catalogStatusFilter === tab.key
+                                    ? "bg-stone-900 text-white shadow-xs"
+                                    : "bg-white/80 text-stone-600 hover:bg-white"
+                                }`}
+                              >
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
+
                           {/* Search & Category Filter Pills */}
                           <div className="flex flex-col sm:flex-row gap-2">
                             <div className="relative flex-1">
@@ -486,13 +587,17 @@ const BannerManager = () => {
                           <div className="max-h-56 overflow-y-auto pr-1 space-y-2 rounded-xl border border-stone-200/80 bg-white p-2">
                             {filteredCatalogAuctions.length === 0 ? (
                               <p className="text-center py-6 text-xs text-stone-400 font-medium">
-                                No matching auctions found. Try another keyword or switch to custom spotlight drop.
+                                No matching auctions found in this tab.
                               </p>
                             ) : (
                               filteredCatalogAuctions.map((auction) => {
+                                const isFinished =
+                                  auction.endTime &&
+                                  new Date(auction.endTime) <= new Date();
                                 const isLive =
-                                  new Date(auction.startTime) <= new Date() &&
-                                  new Date(auction.endTime) > new Date();
+                                  !isFinished &&
+                                  auction.startTime &&
+                                  new Date(auction.startTime) <= new Date();
 
                                 return (
                                   <div
@@ -512,12 +617,18 @@ const BannerManager = () => {
                                         <div className="flex items-center gap-1.5">
                                           <span
                                             className={`px-1.5 py-0.2 rounded text-[9px] font-black uppercase ${
-                                              isLive
+                                              isFinished
+                                                ? "bg-amber-100 text-amber-800"
+                                                : isLive
                                                 ? "bg-emerald-100 text-emerald-800"
                                                 : "bg-blue-100 text-blue-800"
                                             }`}
                                           >
-                                            {isLive ? "Live Now" : "Upcoming"}
+                                            {isFinished
+                                              ? "Completed"
+                                              : isLive
+                                              ? "Live Now"
+                                              : "Upcoming"}
                                           </span>
                                           <span className="text-[10px] text-stone-500 font-semibold truncate">
                                             {auction.category}
@@ -527,7 +638,9 @@ const BannerManager = () => {
                                           {auction.title}
                                         </h5>
                                         <p className="text-[11px] font-bold text-stone-600">
-                                          ₹{Number(auction.startingPrice || auction.currentPrice || 0).toLocaleString("en-IN")}
+                                          {isFinished
+                                            ? `Won: ₹${Number(auction.currentPrice || auction.startingPrice || 0).toLocaleString("en-IN")}`
+                                            : `Price: ₹${Number(auction.currentPrice || auction.startingPrice || 0).toLocaleString("en-IN")}`}
                                         </p>
                                       </div>
                                     </div>
@@ -560,7 +673,7 @@ const BannerManager = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, title: e.target.value })
                       }
-                      placeholder="e.g., Collector's Vintage Speedsters & Classic Automobilia"
+                      placeholder="e.g., Apple 18 Pro (Burgundy) or Vintage Rolex"
                       className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
                       required
                     />
@@ -583,6 +696,126 @@ const BannerManager = () => {
                     />
                   </div>
 
+                  {/* Classification Dropdown */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-stone-700">
+                      Banner Classification & Mode
+                    </label>
+                    <select
+                      value={formData.bannerType}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        let newBadge = formData.badge;
+                        let newCta = formData.ctaText;
+                        if (newType === "Live Hot") {
+                          newBadge = "HOT LIVE AUCTION";
+                          newCta = "Bid Live Now";
+                        } else if (newType === "Completed") {
+                          newBadge = "AUCTION CONCLUDED • WINNER SPOTLIGHT";
+                          newCta = "View Concluded Lot";
+                        } else if (newType === "Upcoming") {
+                          newBadge = "UPCOMING GALA DROP";
+                          newCta = "Explore Upcoming";
+                        }
+                        setFormData({
+                          ...formData,
+                          bannerType: newType,
+                          badge: newBadge,
+                          ctaText: newCta,
+                        });
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                    >
+                      <option value="Live Hot">🔥 Live Hot (Real-Time Bids & Closing Countdown)</option>
+                      <option value="Upcoming">⏳ Upcoming Auction Drop (Opens In Countdown)</option>
+                      <option value="Completed">🏆 Completed / Won Auction (Winner Spotlight & Hammer Price)</option>
+                      <option value="Exclusive">⭐ Exclusive Super Admin Spotlight</option>
+                    </select>
+                  </div>
+
+                  {/* CONDITIONAL SECTION A: If Completed Auction */}
+                  {formData.bannerType === "Completed" && (
+                    <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                        <TrophyIcon className="w-4 h-4 text-amber-600" />
+                        <span>Completed Auction Winner Spotlight</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700">
+                            Winning Bidder Username / Name
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.winnerName}
+                            onChange={(e) =>
+                              setFormData({ ...formData, winnerName: e.target.value })
+                            }
+                            placeholder="e.g. saket07 or John Doe"
+                            className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700">
+                            Final Winning Hammer Price (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={formData.winningPrice}
+                            onChange={(e) =>
+                              setFormData({ ...formData, winningPrice: e.target.value })
+                            }
+                            placeholder="e.g. 195000"
+                            className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CONDITIONAL SECTION B: If Live Auction Heat Metrics */}
+                  {formData.bannerType === "Live Hot" && (
+                    <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+                        <FireIcon className="w-4 h-4 text-[#D6482B]" />
+                        <span>Live Bidding Heat & Active Bidder Metrics</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700">
+                            Current Highest Bid (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={formData.currentBid}
+                            onChange={(e) =>
+                              setFormData({ ...formData, currentBid: e.target.value })
+                            }
+                            placeholder="e.g. 185000"
+                            className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-bold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700">
+                            Total Bids Placed
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={formData.totalBids}
+                            onChange={(e) =>
+                              setFormData({ ...formData, totalBids: e.target.value })
+                            }
+                            placeholder="e.g. 5"
+                            className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Badge Label with 1-Click Presets */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-stone-700">
@@ -594,7 +827,7 @@ const BannerManager = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, badge: e.target.value })
                       }
-                      placeholder="e.g. SUPER ADMIN EXCLUSIVE"
+                      placeholder="e.g. HOT LIVE AUCTION"
                       className="w-full px-4 py-2 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
                     />
                     <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -665,99 +898,99 @@ const BannerManager = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, startingPrice: e.target.value })
                         }
-                        placeholder="e.g., 240000"
+                        placeholder="e.g., 167000"
                         className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-900 focus:outline-none focus:border-[#D6482B]"
                         required
                       />
                     </div>
 
-                    {/* Banner Type */}
+                    {/* CTA Text */}
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-stone-700">
-                        Classification
+                        CTA Button Text
                       </label>
-                      <select
-                        value={formData.bannerType}
-                        onChange={(e) =>
-                          setFormData({ ...formData, bannerType: e.target.value })
-                        }
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
-                      >
-                        <option value="Upcoming">Upcoming Auction Drop</option>
-                        <option value="Live Hot">Live Hot High-Heat</option>
-                        <option value="Exclusive">Exclusive Super Admin Spotlight</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Start Time with quick presets */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-stone-700">
-                        Live / Drop Start Time <span className="text-[#D6482B]">*</span>
-                      </label>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setPresetTime(0)}
-                          className="text-[10px] text-[#D6482B] hover:underline font-bold cursor-pointer"
-                        >
-                          Now
-                        </button>
-                        <span className="text-stone-300">|</span>
-                        <button
-                          type="button"
-                          onClick={() => setPresetTime(24)}
-                          className="text-[10px] text-[#D6482B] hover:underline font-bold cursor-pointer"
-                        >
-                          +24h
-                        </button>
-                        <span className="text-stone-300">|</span>
-                        <button
-                          type="button"
-                          onClick={() => setPresetTime(72)}
-                          className="text-[10px] text-[#D6482B] hover:underline font-bold cursor-pointer"
-                        >
-                          +3d
-                        </button>
-                      </div>
-                    </div>
-                    <input
-                      type="datetime-local"
-                      value={formData.startTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startTime: e.target.value })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
-                      required
-                    />
-                  </div>
-
-                  {/* CTA Text & Link */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-stone-700">
-                      CTA Button Text & Target Link
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
                         value={formData.ctaText}
                         onChange={(e) =>
                           setFormData({ ...formData, ctaText: e.target.value })
                         }
-                        placeholder="Explore Upcoming"
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
-                      />
-                      <input
-                        type="text"
-                        value={formData.ctaLink}
-                        onChange={(e) =>
-                          setFormData({ ...formData, ctaLink: e.target.value })
-                        }
-                        placeholder="/auctions"
+                        placeholder="e.g. Bid Live Now"
                         className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
                       />
                     </div>
+                  </div>
+
+                  {/* Timing Cluster: Start Time and End Time */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Start Time */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-stone-700">
+                          Live / Drop Start Time <span className="text-[#D6482B]">*</span>
+                        </label>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setPresetTime(0)}
+                            className="text-[10px] text-[#D6482B] hover:underline font-bold cursor-pointer"
+                          >
+                            Now
+                          </button>
+                          <span className="text-stone-300">|</span>
+                          <button
+                            type="button"
+                            onClick={() => setPresetTime(24)}
+                            className="text-[10px] text-[#D6482B] hover:underline font-bold cursor-pointer"
+                          >
+                            +24h
+                          </button>
+                        </div>
+                      </div>
+                      <input
+                        type="datetime-local"
+                        value={formData.startTime}
+                        onChange={(e) =>
+                          setFormData({ ...formData, startTime: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                        required
+                      />
+                    </div>
+
+                    {/* End Time (Essential for Live timer countdown) */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                        <span>Bidding Closes At (End Time)</span>
+                        <span className="text-[10px] text-stone-400 font-normal">
+                          Drives closing countdown
+                        </span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formData.endTime}
+                        onChange={(e) =>
+                          setFormData({ ...formData, endTime: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Target Link */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-stone-700">
+                      Destination Link
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.ctaLink}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ctaLink: e.target.value })
+                      }
+                      placeholder="/auctions or /auction/item/..."
+                      className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#D6482B]"
+                    />
                   </div>
 
                   {/* Image Upload Zone */}
@@ -827,7 +1060,7 @@ const BannerManager = () => {
                       </span>
                     </div>
 
-                    {/* Exact Card Mirror (Compact Responsive Card) */}
+                    {/* Exact Card Mirror */}
                     <div className="relative rounded-2xl overflow-hidden bg-white border border-stone-200 shadow-md flex flex-col justify-between">
                       {/* Image section with gradient */}
                       <div className="relative w-full h-44 bg-stone-100 overflow-hidden flex items-center justify-center">
@@ -846,7 +1079,15 @@ const BannerManager = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                         
                         <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-white/95 text-[#D6482B] shadow-xs">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase shadow-xs ${
+                              formData.bannerType === "Completed"
+                                ? "bg-amber-500 text-white"
+                                : formData.bannerType === "Live Hot"
+                                ? "bg-emerald-600 text-white"
+                                : "bg-white/95 text-[#D6482B]"
+                            }`}
+                          >
                             {formData.badge || "SUPER ADMIN EXCLUSIVE"}
                           </span>
                         </div>
@@ -865,28 +1106,70 @@ const BannerManager = () => {
                       <div className="p-4 space-y-3">
                         <div>
                           <h4 className="text-base font-black text-stone-900 line-clamp-1 leading-snug">
-                            {formData.title || "Collector's Vintage Speedsters"}
+                            {formData.title || "Apple 18 Pro (Burgundy)"}
                           </h4>
                           <p className="text-xs text-stone-500 mt-1 line-clamp-2 leading-relaxed">
-                            {formData.description || "Historic racing memorabilia and collector parts ready for live bidding."}
+                            {formData.description || "The flagship smartphone featuring high heat live bidding and certified escrow."}
                           </p>
                         </div>
 
-                        <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
-                          <div>
-                            <span className="text-[9px] uppercase font-bold text-stone-400 block tracking-wider">
-                              Starting Bid
-                            </span>
-                            <span className="text-lg font-black text-[#D6482B]">
-                              ₹{Number(formData.startingPrice || 240000).toLocaleString("en-IN")}
+                        {/* CASE A: Completed Auction Preview */}
+                        {formData.bannerType === "Completed" ? (
+                          <div className="pt-3 border-t border-stone-100 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-[9px] uppercase font-bold text-stone-400 block tracking-wider">
+                                  Hammer Price
+                                </span>
+                                <span className="text-lg font-black text-amber-600">
+                                  ₹{Number(formData.winningPrice || formData.startingPrice || 195000).toLocaleString("en-IN")}
+                                </span>
+                              </div>
+                              <span className="px-3 py-1.5 rounded-xl font-bold text-xs bg-stone-900 text-white shadow-xs inline-flex items-center gap-1">
+                                <span>{formData.ctaText || "View Concluded"}</span>
+                                <ArrowRightIcon className="w-3 h-3" />
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200/80">
+                              <TrophyIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                              <span className="text-[11px] font-bold text-amber-900 truncate">
+                                Won by @{formData.winnerName || "Winning Bidder"}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* CASE B: Live or Upcoming Auction Preview */
+                          <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
+                            <div>
+                              <span className="text-[9px] uppercase font-bold text-stone-400 block tracking-wider">
+                                {formData.bannerType === "Live Hot" && formData.currentBid
+                                  ? "Current Highest Bid"
+                                  : "Starting Bid"}
+                              </span>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-lg font-black text-[#D6482B]">
+                                  ₹{Number(formData.currentBid || formData.startingPrice || 167000).toLocaleString("en-IN")}
+                                </span>
+                                {formData.bannerType === "Live Hot" && (Number(formData.totalBids) > 0 || (formData.currentBid && Number(formData.currentBid) > Number(formData.startingPrice))) && (
+                                  <span className="text-[10px] font-black text-[#D6482B] bg-orange-50 px-1.5 py-0.5 rounded-md">
+                                    🔥 {Number(formData.totalBids) > 0 ? formData.totalBids : 1} {Number(formData.totalBids) === 1 ? "bid" : "bids"}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <span
+                              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs text-white shadow-xs inline-flex items-center gap-1 ${
+                                formData.bannerType === "Live Hot"
+                                  ? "bg-emerald-600"
+                                  : "bg-[#D6482B]"
+                              }`}
+                            >
+                              <span>{formData.ctaText || (formData.bannerType === "Live Hot" ? "Bid Live Now" : "Explore Upcoming")}</span>
+                              <ArrowRightIcon className="w-3 h-3" />
                             </span>
                           </div>
-
-                          <span className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-[#D6482B] text-white shadow-xs inline-flex items-center gap-1">
-                            <span>{formData.ctaText || "Explore Upcoming"}</span>
-                            <ArrowRightIcon className="w-3 h-3" />
-                          </span>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -901,7 +1184,7 @@ const BannerManager = () => {
                         Home Page Hero Deployment
                       </h4>
                       <p className="text-xs text-stone-400 mt-0.5">
-                        This drop will automatically rotate every 3 seconds alongside other active banners.
+                        This drop will automatically rotate every 3.5 seconds alongside other active banners.
                       </p>
                     </div>
 
@@ -1005,7 +1288,7 @@ const BannerManager = () => {
               No Banners Found in this View
             </h4>
             <p className="text-xs text-stone-500 max-w-sm mx-auto">
-              You haven't posted any dynamic banners yet. Click "Publish New Banner" above to feature an upcoming drop or hot auction.
+              You haven't posted any dynamic banners yet. Click "Publish New Banner" above to feature an upcoming drop, live auction, or concluded lot.
             </p>
             <button
               onClick={() => {
@@ -1023,7 +1306,15 @@ const BannerManager = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredBanners.map((banner) => {
               const startDate = new Date(banner.startTime);
-              const isFuture = startDate > new Date();
+              const endDate = banner.endTime ? new Date(banner.endTime) : null;
+              const isFinished =
+                banner.bannerType === "Completed" ||
+                (endDate && endDate <= new Date() && banner.bannerType !== "Upcoming") ||
+                Boolean(banner.winnerName);
+              const isLive =
+                !isFinished &&
+                ((startDate <= new Date() && (!endDate || endDate > new Date())) ||
+                  banner.bannerType === "Live Hot");
 
               return (
                 <div
@@ -1047,8 +1338,16 @@ const BannerManager = () => {
                     {/* Details */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-50 text-[#D6482B] border border-orange-200/60">
-                          {banner.badge || "SUPER ADMIN EXCLUSIVE"}
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                            isFinished
+                              ? "bg-amber-50 text-amber-900 border-amber-200"
+                              : isLive
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : "bg-orange-50 text-[#D6482B] border-orange-200/60"
+                          }`}
+                        >
+                          {banner.badge || (isFinished ? "CONCLUDED LOT" : isLive ? "LIVE NOW" : "UPCOMING")}
                         </span>
                         <span className="text-[10px] text-stone-500 font-semibold">
                           {banner.category}
@@ -1063,20 +1362,47 @@ const BannerManager = () => {
                         {banner.description}
                       </p>
 
-                      <div className="flex items-center gap-3 pt-1 text-xs">
-                        <span className="font-bold text-[#D6482B]">
-                          ₹{Number(banner.startingPrice).toLocaleString("en-IN")}
-                        </span>
-                        <span className="text-stone-400">•</span>
-                        <span className="text-stone-500 text-[11px] flex items-center gap-1">
-                          <ClockIcon className="w-3.5 h-3.5 text-stone-400" />
-                          {isFuture
-                            ? `Goes live ${startDate.toLocaleDateString([], {
-                                month: "short",
-                                day: "numeric",
-                              })}`
-                            : "Live Now"}
-                        </span>
+                      {/* Pricing & Bidders */}
+                      <div className="flex items-center gap-3 pt-1 text-xs flex-wrap">
+                        {isFinished ? (
+                          <>
+                            <span className="font-bold text-amber-700">
+                              Won: ₹{Number(banner.winningPrice || banner.currentBid || banner.startingPrice).toLocaleString("en-IN")}
+                            </span>
+                            {banner.winnerName && (
+                              <>
+                                <span className="text-stone-300">•</span>
+                                <span className="text-[11px] font-semibold text-stone-600 flex items-center gap-1">
+                                  <TrophyIcon className="w-3.5 h-3.5 text-amber-600" />
+                                  @{banner.winnerName}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-bold text-[#D6482B]">
+                              {banner.currentBid && banner.currentBid > banner.startingPrice
+                                ? `Current: ₹${Number(banner.currentBid).toLocaleString("en-IN")}`
+                                : `Starting: ₹${Number(banner.startingPrice).toLocaleString("en-IN")}`}
+                            </span>
+                            {banner.totalBids > 0 && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                {banner.totalBids} bids
+                              </span>
+                            )}
+                            <span className="text-stone-300">•</span>
+                            <span className="text-stone-500 text-[11px] flex items-center gap-1">
+                              <ClockIcon className="w-3.5 h-3.5 text-stone-400" />
+                              {isLive
+                                ? "Live Bidding"
+                                : `Goes live ${startDate.toLocaleDateString([], {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}`}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -10,56 +10,9 @@ import {
   TagIcon,
   FireIcon,
   ArrowRightIcon,
+  TrophyIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
-
-const FALLBACK_BANNERS = [
-  {
-    _id: "spotlight-1",
-    isCurated: true,
-    title: "Heritage Luxury Timepieces & Vintage Chronographs",
-    description:
-      "Exclusive collection curated by Super Admin. Rare Patek Philippe, Rolex Daytona, and Audemars Piguet going live for bidding soon.",
-    category: "Watches & Luxury",
-    condition: "Mint Condition",
-    startingPrice: 125000,
-    startTime: new Date(Date.now() + 1000 * 60 * 60 * 36).toISOString(),
-    itemImage: {
-      url: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1600&q=80",
-    },
-    badge: "Super Admin Spotlight",
-  },
-  {
-    _id: "spotlight-2",
-    isCurated: true,
-    title: "Rare Contemporary Art & Signed Canvas Masterpieces",
-    description:
-      "Verified gallery-grade pieces with complete provenance and authentication certificates. Zero buyer premiums on early bids.",
-    category: "Fine Art",
-    condition: "Original Artwork",
-    startingPrice: 85000,
-    startTime: new Date(Date.now() + 1000 * 60 * 60 * 54).toISOString(),
-    itemImage: {
-      url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1600&q=80",
-    },
-    badge: "Upcoming Gala Drop",
-  },
-  {
-    _id: "spotlight-3",
-    isCurated: true,
-    title: "Collector's Vintage Speedsters & Classic Automobilia",
-    description:
-      "Historic racing memorabilia, limited edition diecasts, and collector vehicle parts ready for live bidding.",
-    category: "Automotive & Memorabilia",
-    condition: "Excellent",
-    startingPrice: 240000,
-    startTime: new Date(Date.now() + 1000 * 60 * 60 * 78).toISOString(),
-    itemImage: {
-      url: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80",
-    },
-    badge: "Super Admin Exclusive",
-  },
-];
 
 const UpcomingBannerCarousel = () => {
   const dispatch = useDispatch();
@@ -83,48 +36,59 @@ const UpcomingBannerCarousel = () => {
     return () => clearInterval(clock);
   }, []);
 
-  // Filter real upcoming auctions from DB
-  const upcomingRealAuctions = allAuctions
-    .filter((a) => a.startTime && new Date(a.startTime) > now)
-    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  // Filter real live/upcoming auctions from DB as fallback ONLY if no dynamic banners exist
+  const realLiveOrUpcoming = allAuctions
+    .filter((a) => a.startTime && (!a.endTime || new Date(a.endTime) > now))
+    .slice(0, 6)
+    .map((item) => {
+      const isLiveNow = new Date(item.startTime) <= now;
+      return {
+        ...item,
+        badge: isLiveNow ? "HOT LIVE AUCTION" : "UPCOMING LIVE DROP",
+        bannerType: isLiveNow ? "Live Hot" : "Upcoming",
+        currentBid: item.currentPrice,
+        totalBids: item.bids?.length || 0,
+        isDynamic: false,
+      };
+    });
 
-  // Merge Super Admin dynamic banners, real upcoming auctions, and curated fallbacks
+  // Prepare slides - Super Admin dynamic banners prioritized, no mock stock banners
   const dynamicBanners = (activeBanners || []).map((b) => ({
     ...b,
     isDynamic: true,
   }));
 
-  const combinedSlides = [
-    ...dynamicBanners,
-    ...upcomingRealAuctions.map((item) => ({
-      ...item,
-      badge: "Upcoming Live Drop",
-    })),
-    ...FALLBACK_BANNERS,
-  ];
+  const combinedSlides = dynamicBanners.length > 0 ? dynamicBanners : realLiveOrUpcoming;
 
-  // De-duplicate by ID and limit to 6 slides max
+  // De-duplicate by ID and limit to 8 slides max
   const seenIds = new Set();
   const slides = combinedSlides.filter((slide) => {
     if (!slide._id || seenIds.has(slide._id)) return false;
     seenIds.add(slide._id);
     return true;
-  }).slice(0, 6);
+  }).slice(0, 8);
 
   const totalSlides = slides.length;
 
-  // Auto-move carousel every 3 seconds (3000ms)
+  // Auto-move carousel every 3.5 seconds
   useEffect(() => {
     if (totalSlides <= 1 || isPaused) return;
 
     timerRef.current = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % totalSlides);
-    }, 3000);
+    }, 3500);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [totalSlides, isPaused]);
+
+  // Keep index within range if slides change
+  useEffect(() => {
+    if (currentIndex >= totalSlides && totalSlides > 0) {
+      setCurrentIndex(0);
+    }
+  }, [totalSlides, currentIndex]);
 
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
@@ -146,8 +110,119 @@ const UpcomingBannerCarousel = () => {
 
   if (totalSlides === 0) return null;
 
-  const currentSlide = slides[currentIndex];
-  const countdown = formatCountdown(currentSlide.startTime);
+  const currentSlide = slides[currentIndex] || slides[0];
+
+  // Cross-reference live auction from allAuctions in Redux for real-time bids & timing accuracy
+  const matchedAuction = allAuctions.find((a) => {
+    if (!a) return false;
+    if (
+      currentSlide.auctionItem &&
+      (a._id === currentSlide.auctionItem._id ||
+        a._id === currentSlide.auctionItem)
+    )
+      return true;
+    if (currentSlide._id && a._id === currentSlide._id) return true;
+    if (
+      currentSlide.title &&
+      a.title &&
+      a.title.trim().toLowerCase() === currentSlide.title.trim().toLowerCase()
+    )
+      return true;
+    return false;
+  });
+
+  // Resolve timing and status states
+  const startTime = matchedAuction?.startTime
+    ? new Date(matchedAuction.startTime)
+    : currentSlide.startTime
+    ? new Date(currentSlide.startTime)
+    : null;
+
+  const endTime = matchedAuction?.endTime
+    ? new Date(matchedAuction.endTime)
+    : currentSlide.endTime
+    ? new Date(currentSlide.endTime)
+    : null;
+
+  const isCompleted =
+    currentSlide.bannerType === "Completed" ||
+    (endTime && endTime <= now && currentSlide.bannerType !== "Upcoming") ||
+    Boolean(currentSlide.winnerName && currentSlide.bannerType !== "Live Hot");
+
+  const isLive =
+    !isCompleted &&
+    ((startTime && startTime <= now && (!endTime || endTime > now)) ||
+      currentSlide.bannerType === "Live Hot");
+
+  const isUpcoming = !isCompleted && !isLive;
+
+  // Resolve target date for countdown
+  const targetCountdownDate = isLive ? endTime : startTime;
+  const countdown = formatCountdown(targetCountdownDate);
+  const countdownLabel = isLive ? "Bidding Closes In" : "Bidding Opens In";
+
+  // Resolve Pricing and Bids accurately
+  const startingPrice = Number(
+    matchedAuction?.startingPrice ||
+      currentSlide.startingPrice ||
+      currentSlide.auctionItem?.startingPrice ||
+      0
+  );
+
+  const currentBid = Number(
+    matchedAuction?.currentPrice ||
+      currentSlide.currentBid ||
+      currentSlide.auctionItem?.currentPrice ||
+      startingPrice
+  );
+
+  // Resolve true total bids count
+  let resolvedBids = 0;
+  if (matchedAuction && Array.isArray(matchedAuction.bids) && matchedAuction.bids.length > 0) {
+    resolvedBids = matchedAuction.bids.length;
+  } else if (
+    currentSlide.auctionItem &&
+    Array.isArray(currentSlide.auctionItem.bids) &&
+    currentSlide.auctionItem.bids.length > 0
+  ) {
+    resolvedBids = currentSlide.auctionItem.bids.length;
+  } else if (currentSlide.totalBids && Number(currentSlide.totalBids) > 0) {
+    resolvedBids = Number(currentSlide.totalBids);
+  }
+
+  // If current price is strictly higher than starting price, at least 1 bid was placed
+  if (resolvedBids === 0 && currentBid > startingPrice) {
+    resolvedBids = 1;
+  }
+
+  const totalBids = resolvedBids;
+  const hasActiveBids = currentBid > startingPrice || totalBids > 0;
+
+  // Resolve Winner Information
+  const winnerName =
+    currentSlide.winnerName ||
+    matchedAuction?.highestBidder?.userName ||
+    currentSlide.auctionItem?.highestBidder?.userName ||
+    (matchedAuction?.bids?.length > 0
+      ? matchedAuction.bids[matchedAuction.bids.length - 1]?.userName
+      : currentSlide.auctionItem?.bids?.length > 0
+      ? currentSlide.auctionItem.bids[currentSlide.auctionItem.bids.length - 1]?.userName
+      : "");
+
+  const winningPrice = Number(
+    currentSlide.winningPrice || currentBid || startingPrice
+  );
+
+  // CTA link target
+  const lotTargetLink =
+    currentSlide.ctaLink ||
+    (matchedAuction?._id
+      ? `/auction/item/${matchedAuction._id}`
+      : currentSlide.auctionItem?._id
+      ? `/auction/item/${currentSlide.auctionItem._id}`
+      : currentSlide._id
+      ? `/auction/item/${currentSlide._id}`
+      : "/auctions");
 
   return (
     <section
@@ -155,12 +230,32 @@ const UpcomingBannerCarousel = () => {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Top Banner Tag */}
+      {/* Top Banner Tag & Admin Shortcut */}
       <div className="absolute top-4 left-6 z-20 flex items-center gap-2 flex-wrap">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/90 text-[#D6482B] shadow-sm backdrop-blur-md border border-[#D6482B]/20">
-          <SparklesIcon className="w-3.5 h-3.5 text-[#D6482B]" />
-          {currentSlide.badge || "Upcoming Auction"}
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-sm border ${
+            isCompleted
+              ? "bg-amber-500/90 text-white border-amber-400/50"
+              : isLive
+              ? "bg-emerald-600/90 text-white border-emerald-400/50"
+              : "bg-white/90 text-[#D6482B] border-[#D6482B]/20"
+          }`}
+        >
+          {isCompleted ? (
+            <TrophyIcon className="w-3.5 h-3.5 text-white" />
+          ) : isLive ? (
+            <FireIcon className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+          ) : (
+            <SparklesIcon className="w-3.5 h-3.5 text-[#D6482B]" />
+          )}
+          {currentSlide.badge ||
+            (isCompleted
+              ? "AUCTION CONCLUDED • WINNER SPOTLIGHT"
+              : isLive
+              ? "HOT LIVE AUCTION"
+              : "UPCOMING AUCTION")}
         </span>
+
         <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-900/70 text-white backdrop-blur-md">
           <ClockIcon className="w-3.5 h-3.5 text-amber-300" />
           Auto-updates every 3s
@@ -169,7 +264,7 @@ const UpcomingBannerCarousel = () => {
         {user?.role === "Super Admin" && (
           <Link
             to="/dashboard"
-            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#D6482B] hover:bg-[#b33a22] text-white backdrop-blur-md shadow-sm transition"
+            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#D6482B] hover:bg-[#b33a22] text-white backdrop-blur-md shadow-sm transition cursor-pointer"
             title="Manage dynamic banners in Admin Dashboard"
           >
             <FireIcon className="w-3 h-3" />
@@ -195,101 +290,189 @@ const UpcomingBannerCarousel = () => {
                   {currentSlide.condition}
                 </span>
               )}
+              {isLive && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  Live Bidding
+                </span>
+              )}
+              {isCompleted && (
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-300">
+                  <ShieldCheckIcon className="w-3.5 h-3.5 text-amber-600" />
+                  Hammer Dropped
+                </span>
+              )}
             </div>
 
             <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-stone-900 leading-tight mb-3 transition-all duration-300">
               {currentSlide.title}
             </h3>
 
-            <p className="text-stone-600 text-sm sm:text-base line-clamp-2 md:line-clamp-3 mb-6 max-w-xl">
+            <p className="text-stone-600 text-sm sm:text-base line-clamp-2 md:line-clamp-3 mb-6 max-w-xl leading-relaxed">
               {currentSlide.description ||
-                "Don't miss this upcoming high-demand auction. Verified authenticity, transparent bidding, and secure escrow guarantee."}
+                "Verified authentic lot with complete documentation and certified provenance. Transparent bidding and secure escrow guarantee."}
             </p>
           </div>
 
-          {/* Pricing & Countdown Row */}
-          <div className="flex flex-wrap items-end gap-6 pt-4 border-t border-stone-100">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-1">
-                Starting Bid
-              </p>
-              <p className="text-2xl sm:text-3xl font-black text-[#D6482B]">
-                ₹{currentSlide.startingPrice?.toLocaleString() || "0"}
-              </p>
-            </div>
+          {/* Pricing & Status Row - Stable Non-Shifting Layout */}
+          <div className="pt-4 border-t border-stone-100">
+            
+            {/* CASE 1: CONCLUDED / COMPLETED AUCTION SHOWCASE */}
+            {isCompleted ? (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  {/* Winning Hammer Price */}
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-stone-500 font-semibold mb-0.5">
+                      Winning Hammer Price
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-black text-amber-600">
+                      ₹{winningPrice.toLocaleString("en-IN")}
+                    </p>
+                    {startingPrice > 0 && (
+                      <span className="text-[11px] text-stone-400 font-medium">
+                        Started at ₹{startingPrice.toLocaleString("en-IN")}
+                      </span>
+                    )}
+                  </div>
 
-            {/* Live Countdown Box */}
-            <div className="flex items-center gap-2 bg-stone-50/90 border border-stone-200/80 rounded-2xl px-4 py-2">
-              <div className="text-center">
-                <span className="text-lg font-black text-stone-900 block leading-none">
-                  {String(countdown.days).padStart(2, "0")}
-                </span>
-                <span className="text-[10px] uppercase font-semibold text-stone-500">
-                  Days
-                </span>
-              </div>
-              <span className="text-stone-400 font-bold mb-2">:</span>
-              <div className="text-center">
-                <span className="text-lg font-black text-stone-900 block leading-none">
-                  {String(countdown.hours).padStart(2, "0")}
-                </span>
-                <span className="text-[10px] uppercase font-semibold text-stone-500">
-                  Hrs
-                </span>
-              </div>
-              <span className="text-stone-400 font-bold mb-2">:</span>
-              <div className="text-center">
-                <span className="text-lg font-black text-stone-900 block leading-none">
-                  {String(countdown.minutes).padStart(2, "0")}
-                </span>
-                <span className="text-[10px] uppercase font-semibold text-stone-500">
-                  Min
-                </span>
-              </div>
-              <span className="text-stone-400 font-bold mb-2">:</span>
-              <div className="text-center">
-                <span className="text-lg font-black text-[#D6482B] block leading-none">
-                  {String(countdown.seconds).padStart(2, "0")}
-                </span>
-                <span className="text-[10px] uppercase font-semibold text-stone-500">
-                  Sec
-                </span>
-              </div>
-            </div>
+                  {/* Winner Spotlight Box */}
+                  <div className="flex-1 max-w-sm flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl px-4 py-2.5 shadow-xs">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-xs flex-shrink-0">
+                      <TrophyIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-black text-amber-900 tracking-wider block">
+                        Auction Won By
+                      </span>
+                      <p className="text-xs sm:text-sm font-black text-stone-900 truncate">
+                        {winnerName ? `@${winnerName}` : "Verified Winning Bidder"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            {/* Action CTA Button */}
-            <div className="flex-1 min-w-[140px]">
-              {currentSlide.isDynamic ? (
-                <Link
-                  to={
-                    currentSlide.ctaLink ||
-                    (currentSlide.auctionItem?._id
-                      ? `/auction/item/${currentSlide.auctionItem._id}`
-                      : "/auctions")
-                  }
-                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
-                >
-                  <span>{currentSlide.ctaText || "Explore Upcoming"}</span>
-                  <ArrowRightIcon className="w-4 h-4" />
-                </Link>
-              ) : currentSlide.isCurated ? (
-                <Link
-                  to="/auctions"
-                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
-                >
-                  <span>Explore Upcoming</span>
-                  <ArrowRightIcon className="w-4 h-4" />
-                </Link>
-              ) : (
-                <Link
-                  to={`/auction/item/${currentSlide._id}`}
-                  className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-md shadow-orange-500/20 hover:shadow-lg transition-all"
-                >
-                  <span>View Details</span>
-                  <ArrowRightIcon className="w-4 h-4" />
-                </Link>
-              )}
-            </div>
+                {/* Bottom Action Bar */}
+                <div className="flex items-center gap-3 pt-1">
+                  <Link
+                    to={lotTargetLink}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs text-white bg-stone-900 hover:bg-stone-800 shadow-md transition cursor-pointer"
+                  >
+                    <span>{currentSlide.ctaText || "View Concluded Lot"}</span>
+                    <ArrowRightIcon className="w-3.5 h-3.5" />
+                  </Link>
+                  <div className="flex items-center gap-1 text-stone-400 text-xs font-medium">
+                    <ShieldCheckIcon className="w-4 h-4 text-emerald-600" />
+                    <span>Transaction Verified</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* CASE 2 & 3: LIVE OR UPCOMING AUCTION - ROCK SOLID 2-ROW ARCHITECTURE */
+              <div className="space-y-4">
+                {/* Row 1: Metrics - Price & Fixed-Width Timer */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center justify-between">
+                  {/* Left: Price & Bid Count */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs uppercase tracking-wider text-emerald-700 font-bold">
+                        {hasActiveBids ? "Current Highest Bid" : "Starting Bid"}
+                      </p>
+                      {totalBids > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-orange-100 text-[#D6482B] border border-orange-200">
+                          <FireIcon className="w-3 h-3" />
+                          {totalBids} {totalBids === 1 ? "bid" : "bids"}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-emerald-600 font-bold">
+                          Be the first bidder!
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl sm:text-3xl font-black text-[#D6482B] tracking-tight">
+                        ₹{currentBid.toLocaleString("en-IN")}
+                      </p>
+                      {startingPrice > 0 && currentBid > startingPrice && (
+                        <span className="text-xs text-stone-400 font-semibold line-through">
+                          Starting: ₹{startingPrice.toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Real-Time Live Countdown Box with Fixed Digit Widths */}
+                  <div className="flex flex-col items-start sm:items-end gap-1">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-stone-500 flex items-center gap-1.5">
+                      {isLive && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      )}
+                      {countdownLabel}
+                    </span>
+                    
+                    <div className="flex items-center gap-1.5 bg-stone-50/95 border border-stone-200/90 rounded-2xl px-3.5 py-2 font-mono tabular-nums shadow-xs">
+                      <div className="text-center w-7 sm:w-8">
+                        <span className="text-base sm:text-lg font-black text-stone-900 block leading-none">
+                          {String(countdown.days).padStart(2, "0")}
+                        </span>
+                        <span className="text-[9px] uppercase font-semibold text-stone-400 font-sans">
+                          Days
+                        </span>
+                      </div>
+                      <span className="text-stone-300 font-bold mb-2">:</span>
+                      <div className="text-center w-7 sm:w-8">
+                        <span className="text-base sm:text-lg font-black text-stone-900 block leading-none">
+                          {String(countdown.hours).padStart(2, "0")}
+                        </span>
+                        <span className="text-[9px] uppercase font-semibold text-stone-400 font-sans">
+                          Hrs
+                        </span>
+                      </div>
+                      <span className="text-stone-300 font-bold mb-2">:</span>
+                      <div className="text-center w-7 sm:w-8">
+                        <span className="text-base sm:text-lg font-black text-stone-900 block leading-none">
+                          {String(countdown.minutes).padStart(2, "0")}
+                        </span>
+                        <span className="text-[9px] uppercase font-semibold text-stone-400 font-sans">
+                          Min
+                        </span>
+                      </div>
+                      <span className="text-stone-300 font-bold mb-2">:</span>
+                      <div className="text-center w-7 sm:w-8">
+                        <span className="text-base sm:text-lg font-black text-[#D6482B] block leading-none">
+                          {String(countdown.seconds).padStart(2, "0")}
+                        </span>
+                        <span className="text-[9px] uppercase font-semibold text-stone-400 font-sans">
+                          Sec
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Action Button & Trust Guarantee */}
+                <div className="pt-1 flex flex-wrap items-center justify-between gap-3">
+                  <Link
+                    to={lotTargetLink}
+                    className={`inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all cursor-pointer ${
+                      isLive
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-600/20"
+                        : "bg-gradient-to-r from-[#D6482B] to-orange-500 hover:from-[#b33a22] hover:to-orange-600 shadow-orange-500/20"
+                    }`}
+                  >
+                    <span>
+                      {currentSlide.ctaText || (isLive ? "Bid Live Now" : "Explore Upcoming")}
+                    </span>
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </Link>
+
+                  <div className="flex items-center gap-1.5 text-stone-400 text-xs font-medium">
+                    <ShieldCheckIcon className="w-4 h-4 text-emerald-600" />
+                    <span>Verified Authentic • Escrow Protected</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -303,6 +486,7 @@ const UpcomingBannerCarousel = () => {
           />
           {/* Soft gradient masks for visual blending */}
           <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-white via-transparent to-transparent opacity-80 md:opacity-90"></div>
+          
           <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold text-stone-800 shadow-sm border border-stone-200">
             {currentIndex + 1} / {totalSlides}
           </div>
@@ -313,14 +497,14 @@ const UpcomingBannerCarousel = () => {
       <button
         onClick={handlePrev}
         aria-label="Previous Slide"
-        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-stone-800 flex items-center justify-center shadow-md border border-stone-200/80 hover:scale-110 transition-all"
+        className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-stone-800 flex items-center justify-center shadow-md border border-stone-200/80 hover:scale-110 transition-all cursor-pointer"
       >
         <ChevronLeftIcon className="w-5 h-5 text-stone-700" />
       </button>
       <button
         onClick={handleNext}
         aria-label="Next Slide"
-        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-stone-800 flex items-center justify-center shadow-md border border-stone-200/80 hover:scale-110 transition-all"
+        className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-stone-800 flex items-center justify-center shadow-md border border-stone-200/80 hover:scale-110 transition-all cursor-pointer"
       >
         <ChevronRightIcon className="w-5 h-5 text-stone-700" />
       </button>
@@ -332,7 +516,7 @@ const UpcomingBannerCarousel = () => {
             key={idx}
             onClick={() => setCurrentIndex(idx)}
             aria-label={`Go to slide ${idx + 1}`}
-            className={`h-2 rounded-full transition-all duration-300 ${
+            className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
               currentIndex === idx
                 ? "w-8 bg-[#D6482B]"
                 : "w-2 bg-stone-300 hover:bg-stone-400"

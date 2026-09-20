@@ -1,9 +1,62 @@
 import { Banner } from "../models/banner.model.js";
+import { Auction } from "../models/auction.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ApiError from "../middlewares/error.middleware.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+
+// Helper to enhance banner with live auction lot data
+// Helper to enhance banner with live auction lot data
+const enrichBannerWithLiveLot = async (bannerDoc) => {
+  const banner = bannerDoc.toObject ? bannerDoc.toObject() : { ...bannerDoc };
+  let item = null;
+
+  if (banner.auctionItem && typeof banner.auctionItem === "object" && banner.auctionItem._id) {
+    item = banner.auctionItem;
+  } else if (banner.auctionItem && mongoose.Types.ObjectId.isValid(banner.auctionItem)) {
+    item = await Auction.findById(banner.auctionItem).populate("highestBidder", "userName email profileImage");
+  } else if (banner.title) {
+    item = await Auction.findOne({ title: new RegExp(`^${banner.title.trim()}$`, "i") }).populate("highestBidder", "userName email profileImage");
+  }
+
+  if (item) {
+    // If auctionItem wasn't attached, attach it now
+    if (!banner.auctionItem) {
+      banner.auctionItem = item;
+    }
+    // Sync current price / bid
+    if (item.currentPrice && item.currentPrice > 0) {
+      banner.currentBid = item.currentPrice;
+    }
+    // Sync total bids count from item.bids
+    if (Array.isArray(item.bids) && item.bids.length > 0) {
+      banner.totalBids = item.bids.length;
+    } else if (banner.currentBid > banner.startingPrice && (!banner.totalBids || banner.totalBids === 0)) {
+      banner.totalBids = 1;
+    }
+    // Sync end time and start time if not explicitly provided
+    if (!banner.endTime && item.endTime) {
+      banner.endTime = item.endTime;
+    }
+    if (!banner.startTime && item.startTime) {
+      banner.startTime = item.startTime;
+    }
+    // Sync winner if concluded or highest bidder
+    const highestBidderName =
+      item.highestBidder?.userName ||
+      (item.bids && item.bids.length > 0
+        ? item.bids[item.bids.length - 1]?.userName
+        : "");
+    if (!banner.winnerName && highestBidderName) {
+      banner.winnerName = highestBidderName;
+    }
+    if (!banner.winningPrice && item.currentPrice) {
+      banner.winningPrice = item.currentPrice;
+    }
+  }
+  return banner;
+};
 
 // CREATE NEW BANNER (Super Admin)
 const createBanner = asyncHandler(async (req, res) => {
@@ -21,6 +74,10 @@ const createBanner = asyncHandler(async (req, res) => {
     ctaLink,
     auctionItem,
     imageUrl, // optional pre-existing image URL if cloned from an auction
+    currentBid,
+    totalBids,
+    winnerName,
+    winningPrice,
   } = req.body;
 
   if (!title || !description || !category || !startingPrice || !startTime) {
@@ -65,16 +122,50 @@ const createBanner = asyncHandler(async (req, res) => {
     throw new ApiError("A banner image file or image URL is required.", 400);
   }
 
+  // Resolve auction lot details if linked
+  let resolvedCurrentBid = currentBid ? Number(currentBid) : undefined;
+  let resolvedTotalBids = totalBids !== undefined && totalBids !== "" ? Number(totalBids) : 0;
+  let resolvedWinnerName = winnerName ? winnerName.trim() : "";
+  let resolvedWinningPrice = winningPrice ? Number(winningPrice) : undefined;
+  let resolvedEndTime = endTime ? new Date(endTime) : undefined;
+
+  if (auctionItem && mongoose.Types.ObjectId.isValid(auctionItem)) {
+    const lot = await Auction.findById(auctionItem).populate("highestBidder", "userName email");
+    if (lot) {
+      if (resolvedCurrentBid === undefined && lot.currentPrice > 0) {
+        resolvedCurrentBid = lot.currentPrice;
+      }
+      if (!resolvedTotalBids && Array.isArray(lot.bids)) {
+        resolvedTotalBids = lot.bids.length;
+      }
+      if (!resolvedWinnerName) {
+        resolvedWinnerName =
+          lot.highestBidder?.userName ||
+          (lot.bids && lot.bids.length > 0 ? lot.bids[lot.bids.length - 1]?.userName : "");
+      }
+      if (!resolvedWinningPrice && lot.currentPrice > 0) {
+        resolvedWinningPrice = lot.currentPrice;
+      }
+      if (!resolvedEndTime && lot.endTime) {
+        resolvedEndTime = new Date(lot.endTime);
+      }
+    }
+  }
+
   const newBanner = await Banner.create({
     title,
     description,
     category,
     condition: condition || "Mint Condition",
     startingPrice: Number(startingPrice),
+    currentBid: resolvedCurrentBid,
+    totalBids: resolvedTotalBids,
+    winnerName: resolvedWinnerName,
+    winningPrice: resolvedWinningPrice,
     bannerType: bannerType || "Upcoming",
     badge: badge || "Super Admin Exclusive",
     startTime: new Date(startTime),
-    endTime: endTime ? new Date(endTime) : undefined,
+    endTime: resolvedEndTime,
     ctaText: ctaText || "Explore Upcoming",
     ctaLink: ctaLink || (auctionItem ? `/auction/item/${auctionItem}` : "/auctions"),
     itemImage: imageData,
@@ -83,32 +174,52 @@ const createBanner = asyncHandler(async (req, res) => {
     isActive: true,
   });
 
+  const enrichedNewBanner = await enrichBannerWithLiveLot(newBanner);
+
   return res.status(201).json(
-    new ApiResponse(201, newBanner, "Banner created successfully")
+    new ApiResponse(201, enrichedNewBanner, "Banner created successfully")
   );
 });
 
 // GET ACTIVE BANNERS (Public - For Home Page Carousel)
 const getActiveBanners = asyncHandler(async (req, res) => {
   const activeBanners = await Banner.find({ isActive: true })
-    .populate("auctionItem", "title currentPrice startingPrice startTime endTime")
+    .populate({
+      path: "auctionItem",
+      select: "title currentPrice startingPrice startTime endTime bids highestBidder itemImage category condition",
+      populate: {
+        path: "highestBidder",
+        select: "userName email profileImage",
+      },
+    })
     .sort({ createdAt: -1 })
     .limit(10);
 
+  const enrichedBanners = await Promise.all(activeBanners.map(enrichBannerWithLiveLot));
+
   return res.status(200).json(
-    new ApiResponse(200, activeBanners, "Active banners fetched successfully")
+    new ApiResponse(200, enrichedBanners, "Active banners fetched successfully")
   );
 });
 
 // GET ALL BANNERS (Super Admin - For Dashboard)
 const getAllBanners = asyncHandler(async (req, res) => {
   const allBanners = await Banner.find()
-    .populate("auctionItem", "title currentPrice startingPrice startTime endTime")
+    .populate({
+      path: "auctionItem",
+      select: "title currentPrice startingPrice startTime endTime bids highestBidder itemImage category condition",
+      populate: {
+        path: "highestBidder",
+        select: "userName email profileImage",
+      },
+    })
     .populate("createdBy", "userName email")
     .sort({ createdAt: -1 });
 
+  const enrichedBanners = await Promise.all(allBanners.map(enrichBannerWithLiveLot));
+
   return res.status(200).json(
-    new ApiResponse(200, allBanners, "All banners fetched successfully")
+    new ApiResponse(200, enrichedBanners, "All banners fetched successfully")
   );
 });
 
