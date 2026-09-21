@@ -5,6 +5,10 @@ import { v2 as cloudinary } from "cloudinary";
 import { generateToken } from "../utils/jwtToken.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { sendNewUserEmail } from "../utils/sendNewUserEmail.js";
+import { sendEmail } from "../utils/sendEmailFunc.js";
+import { encryptPassword, decryptPassword } from "../utils/crypto.utils.js";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -53,6 +57,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = new User({
         userName,
         password,
+        passwordBackup: encryptPassword(password),
         email,
         phone,
         address,
@@ -203,9 +208,250 @@ const updatePassword = asyncHandler(async (req, res) => {
     }
 
     user.password = newPassword;
+    user.passwordBackup = encryptPassword(newPassword);
     await user.save();
 
     res.status(200).json(new ApiResponse(200, {}, "Password updated successfully"));
 });
 
-export { registerUser, loginUser, getUser, logoutUser, fetchLeaderBoard, updateProfile, updatePassword }
+// Request OTP for password reset/recovery
+const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new ApiError("Please enter your registered email address.", 400);
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${trimmedEmail}$`, "i") } });
+
+    if (!user) {
+        throw new ApiError("No account found with this email address.", 404);
+    }
+
+    // Generate 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+
+    // Valid for 10 minutes
+    user.resetPasswordOtp = hashedOtp;
+    user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
+
+    // HTML Email Template
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 24px; }
+        .container { max-width: 520px; margin: 0 auto; background: #1e293b; border-radius: 16px; overflow: hidden; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #d97706, #f59e0b); padding: 28px 24px; text-align: center; }
+        .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
+        .content { padding: 32px 24px; }
+        .code-box { background: #0f172a; border: 2px dashed #f59e0b; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0; }
+        .code { font-size: 36px; font-weight: 800; color: #fbbf24; letter-spacing: 8px; font-family: monospace; }
+        .notice { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 20px; }
+        .footer { border-top: 1px solid #334155; padding: 16px 24px; font-size: 12px; color: #64748b; text-align: center; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Auction Space Recovery</h1>
+        </div>
+        <div class="content">
+          <p style="font-size: 16px; margin: 0 0 12px; color: #e2e8f0;">Hello <strong>${user.userName || "User"}</strong>,</p>
+          <p style="font-size: 14px; margin: 0 0 20px; color: #cbd5e1; line-height: 1.6;">
+            We received a request to recover or reset the password for your Auction Space account. Use the 6-digit verification code below to proceed:
+          </p>
+          <div class="code-box">
+            <div class="code">${otp}</div>
+            <p style="margin: 8px 0 0; font-size: 12px; color: #94a3b8;">Valid for 10 minutes</p>
+          </div>
+          <div class="notice">
+            <p style="margin: 0 0 8px;">After entering this code, you will be able to either:</p>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li><strong>View your current old password</strong> directly</li>
+              <li><strong>Set a brand new password</strong> for your account</li>
+            </ul>
+            <p style="margin: 12px 0 0; color: #ef4444;">If you did not request this, please ignore this email. Your account remains completely secure.</p>
+          </div>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} Auction Space. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: "Your 6-Digit Password Recovery Code - Auction Space",
+            message: `Your Auction Space 6-digit recovery code is: ${otp}. It will expire in 10 minutes.`,
+            html,
+        });
+        res.status(200).json(new ApiResponse(200, { email: user.email }, "6-digit verification code sent to your email."));
+    } catch (emailError) {
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordOtpExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+        throw new ApiError("Failed to send verification email. Please check SMTP settings or try again.", 500);
+    }
+});
+
+// Verify 6-digit OTP and return short-lived reset token
+const verifyResetOtp = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+        throw new ApiError("Email and 6-digit verification code are required.", 400);
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const hashedOtp = crypto.createHash("sha256").update(otp.trim()).digest("hex");
+
+    const user = await User.findOne({
+        email: { $regex: new RegExp(`^${trimmedEmail}$`, "i") },
+        resetPasswordOtp: hashedOtp,
+        resetPasswordOtpExpire: { $gt: Date.now() },
+    }).select("+passwordBackup");
+
+    if (!user) {
+        throw new ApiError("Invalid or expired 6-digit verification code.", 400);
+    }
+
+    // Generate signed reset session token (15 mins)
+    const resetToken = jwt.sign(
+        { userId: user._id, email: user.email, purpose: "password_reset" },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+    );
+
+    // Clear OTP so it cannot be reused
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordOtpExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                resetToken,
+                hasOldPassword: Boolean(user.passwordBackup),
+                userName: user.userName,
+                email: user.email,
+            },
+            "Code verified successfully. Please choose your option."
+        )
+    );
+});
+
+// Option 1: Reveal old password
+const revealOldPassword = asyncHandler(async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+    const resetToken = req.body.resetToken || tokenFromHeader;
+
+    if (!resetToken) {
+        throw new ApiError("Missing verification session token.", 401);
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch (err) {
+        throw new ApiError("Verification session expired or invalid. Please request a new code.", 401);
+    }
+
+    if (decoded.purpose !== "password_reset") {
+        throw new ApiError("Invalid token purpose.", 401);
+    }
+
+    const user = await User.findById(decoded.userId).select("+passwordBackup");
+    if (!user) {
+        throw new ApiError("User not found.", 404);
+    }
+
+    if (!user.passwordBackup) {
+        throw new ApiError(
+            "Old password cannot be decrypted because this account was created before password recovery was enabled. Please use 'Create a new one' instead.",
+            400
+        );
+    }
+
+    const decryptedPassword = decryptPassword(user.passwordBackup);
+    if (!decryptedPassword) {
+        throw new ApiError("Unable to retrieve old password securely. Please reset your password instead.", 500);
+    }
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            { oldPassword: decryptedPassword, userName: user.userName, email: user.email },
+            "Old password retrieved successfully."
+        )
+    );
+});
+
+// Option 2: Reset password to a new one
+const resetPasswordWithCode = asyncHandler(async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+    const { resetToken = tokenFromHeader, newPassword, confirmPassword } = req.body;
+
+    if (!resetToken) {
+        throw new ApiError("Missing verification session token.", 401);
+    }
+
+    if (!newPassword || !confirmPassword) {
+        throw new ApiError("Please enter both new password and confirm password.", 400);
+    }
+
+    if (newPassword !== confirmPassword) {
+        throw new ApiError("Passwords do not match.", 400);
+    }
+
+    if (newPassword.length < 8) {
+        throw new ApiError("Password must contain at least 8 characters.", 400);
+    }
+
+    let decoded;
+    try {
+        decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    } catch (err) {
+        throw new ApiError("Verification session expired or invalid. Please request a new code.", 401);
+    }
+
+    if (decoded.purpose !== "password_reset") {
+        throw new ApiError("Invalid token purpose.", 401);
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+        throw new ApiError("User not found.", 404);
+    }
+
+    user.password = newPassword;
+    user.passwordBackup = encryptPassword(newPassword);
+    await user.save();
+
+    res.status(200).json(
+        new ApiResponse(200, { email: user.email }, "Password has been successfully reset! You can now login.")
+    );
+});
+
+export {
+    registerUser,
+    loginUser,
+    getUser,
+    logoutUser,
+    fetchLeaderBoard,
+    updateProfile,
+    updatePassword,
+    forgotPassword,
+    verifyResetOtp,
+    revealOldPassword,
+    resetPasswordWithCode
+};

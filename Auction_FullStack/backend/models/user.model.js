@@ -66,6 +66,18 @@ const userSchema = new mongoose.Schema({
     default: 0,
     index: true,
   },
+  passwordBackup: {
+    type: String,
+    select: false,
+  },
+  resetPasswordOtp: {
+    type: String,
+    select: false,
+  },
+  resetPasswordOtpExpire: {
+    type: Date,
+    select: false,
+  },
 }, { timestamps: true });
 
 // before saving the user lets hash the password

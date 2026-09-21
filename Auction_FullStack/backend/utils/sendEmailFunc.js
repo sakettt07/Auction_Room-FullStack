@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-const sendEmail = async ({ email, subject, message }) => {
+const sendEmail = async ({ email, subject, message, html }) => {
     try {
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -13,16 +13,23 @@ const sendEmail = async ({ email, subject, message }) => {
             },
         });
 
-        await transporter.sendMail({
-            from: `"Auction Room" <${process.env.SMTP_MAIL}>`,
+        const mailOptions = {
+            from: `"Auction Space" <${process.env.SMTP_MAIL}>`,
             to: email,
             subject,
             text: message,
-        });
+        };
 
-        console.log("Email sent successfully");
+        if (html) {
+            mailOptions.html = html;
+        }
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Email sent successfully:", info?.messageId || "OK");
+        return { success: true, info };
     } catch (error) {
         console.error("Email sending failed:", error);
+        throw error;
     }
 };
 

@@ -11,12 +11,14 @@ import {
   ArrowRightIcon,
   CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
+import ForgotPasswordModal from "../custom-components/ForgotPasswordModal";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
 
   const { loading, isAuthenticated } = useSelector((state) => state.user);
 
@@ -121,6 +123,13 @@ const Login = () => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-stone-700">
                   Password
                 </label>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(true)}
+                  className="text-xs font-semibold text-[#D6482B] hover:text-[#b33a22] transition-colors cursor-pointer"
+                >
+                  Forgot Password?
+                </button>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
@@ -207,6 +216,17 @@ const Login = () => {
         </div>
 
       </div>
+
+      <ForgotPasswordModal
+        isOpen={isForgotModalOpen}
+        onClose={() => setIsForgotModalOpen(false)}
+        defaultEmail={email}
+        onPasswordRetrieved={(retrievedEmail, retrievedPassword) => {
+          if (retrievedEmail) setEmail(retrievedEmail);
+          if (retrievedPassword) setPassword(retrievedPassword);
+          if (errors.email || errors.password) setErrors({});
+        }}
+      />
     </div>
   );
 };
