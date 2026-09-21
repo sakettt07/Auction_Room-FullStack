@@ -295,10 +295,14 @@ const forgotPassword = asyncHandler(async (req, res) => {
         });
         res.status(200).json(new ApiResponse(200, { email: user.email }, "6-digit verification code sent to your email."));
     } catch (emailError) {
+        console.error("Forgot password email error:", emailError);
         user.resetPasswordOtp = undefined;
         user.resetPasswordOtpExpire = undefined;
         await user.save({ validateBeforeSave: false });
-        throw new ApiError("Failed to send verification email. Please check SMTP settings or try again.", 500);
+        throw new ApiError(
+            `Failed to send verification email (${emailError?.message || "SMTP error"}). Please check SMTP settings.`,
+            500
+        );
     }
 });
 
